@@ -53,7 +53,7 @@ const WatchList = (props) => {
               <LineChart chartData={chartList ? chartList[index].data : ChartData} options={listOptions}></LineChart>
             </div>
             <div className="numberPercent">
-              <p>${chartList ? (Math.ceil(chartList[index].data.datasets[0].data.slice(-1)[0] * 100) / 100).toFixed(2) : "$123.45"}</p>
+              <p>${chartList ? (Math.ceil(chartList[index].data.datasets[0].data.slice(-1)[0] * 100) / 100).toFixed(2) : "123.45"}</p>
               <p>+0.00%</p>
             </div>
           </div>

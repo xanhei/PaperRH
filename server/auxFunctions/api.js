@@ -106,10 +106,13 @@ const ltdTimeFormat = (arr, isMinBar) => {
     const hours = (Number(arr[arr.length - 1].t.substring(11, 13)) + nextHour) % 24;
     let tempString = `${(hours < 10) ? "0" + hours : hours}:${(minutes < 10) ? "0" + minutes : minutes}`
     let formatString = arr[arr.length - 1].t.substring(0, 11) + tempString + ":00Z";
-    res.push(formatTime(formatString));
+    if(formatString.substring(11, 16) !== "00:05")
+      res.push(formatTime(formatString));
   }
   else {
     for(let i = 0; i < arr.length; i++) {
+      if(arr[i].t.substring(11, 16) == "00:00")
+          continue;
       res.push(formatTime(arr[i].t, "1Hour"));
       if(arr[i].t.substring(11, 16) == "23:00") {
         let k = (Number(arr[i].t.substring(5, 7)) < 10) ? 6 : 5;
