@@ -1,0 +1,146 @@
+html {
+  background-color: black;
+  color: white;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+}
+
+.head {
+  position: relative;
+}
+
+.homeBtn {
+  margin-left: 2%;
+}
+
+.search {
+  position: absolute;
+  top: 30%;
+  left: 24%;
+  width: 20%;
+  height: 40%;
+  text-align: center;
+}
+
+.searchBar {
+  width: 100%;
+  height: 100%;
+  background-color: black;
+  border: solid;
+  border-color: #333;
+  border-radius: 10px;
+  border-width: 1px;
+  caret-color: white;
+  outline: none;
+  text-indent: 10%;
+  color: white;
+}
+
+.searchBar:hover {
+  background-color: #333;
+}
+.searchIcon {
+  position: absolute;
+  top: 26%;
+  left: 3%;
+  width: 5%;
+}
+
+.chartDiv {
+  position: relative;
+  left: 3%;
+  margin-left: 7%;
+  margin-top: 1%;
+  width: 50%;
+}
+
+.chartText {
+  margin-top: 0%;
+  margin-bottom: 0%;
+  font-size: 230%;
+}
+
+.portChart {
+  height: 80%;
+}
+
+.buttonDiv {
+  position: relative;
+  height: 20%;
+  margin-top: 2%;
+}
+
+.timeButton {
+  width: 5.1%;
+  aspect-ratio: 1;
+  cursor: pointer;
+  color: white;
+  font: "normal";
+  background-color: transparent;
+  border-color: transparent;
+  outline: none;
+}
+
+.timeButton:hover {
+  font-weight: bold;
+}
+
+.line {
+  border: none;
+  height: 1px;
+  background-color: #333;
+  margin-top: 0px;
+  margin-bottom: 0px;
+}
+
+.WatchList {
+  position: absolute;
+  left: 65%;
+  top: 10%;
+  width: 15%;
+  height: 70%;
+  border: 1px solid;
+  border-radius: 5px;
+  border-color: #333;
+}
+
+.listHead {
+  text-align: center;
+}
+
+.listView {
+  margin-top: 0px;
+  margin-bottom: 0px;
+  display: flex;
+  flex-direction: row;
+}
+
+.listView:hover {
+  background-color: #333;
+  cursor: pointer;
+}
+
+.watchName {
+  font-size: 100%;
+  margin-left: 7%;
+  margin-top: 10%;
+  margin-bottom: 7%;
+  min-width: 25%;
+}
+
+.watchChart {
+  margin-top: 6%;
+  margin-bottom: 7%;
+  max-height: 40%;
+}
+
+.numberPercent {
+  margin-left: 5%;
+  margin-top: 2%;
+  font-size: 80%;
+  min-width: 25%;
+  text-align: center;
+}
