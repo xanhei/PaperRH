@@ -5,14 +5,8 @@ const app = express();
 
 //app.use(express.json()); //allows app.post route handler to parse json
 
-const stocks = [
-  {id: "SPY", name: "spy"},
-  {id: "AMD", name: "amd"},
-  {id: "AAPL", name: "aapl"}
-];
-
-app.get("/", (req, res) => {
-  res.send("hello");
+app.use("/", (req, res) => {
+  res.send("Server is running");
 });
 
 app.get("/api/stocks", async (req, res) => {
