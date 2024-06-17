@@ -1,4 +1,4 @@
 {
   "version": 2,
-  "rewrites": [{"src": "/api", "dest": "../server/server.js"}]
+  "rewrites": [{"source": "/api", "dest": "../server/server.js"}]
 }
