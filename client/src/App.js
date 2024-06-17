@@ -22,8 +22,7 @@ const params = "?sort=asc";
 const defaultSearch = "SPY";
 
 const doSmth = async () => {
-  console.log(process.env.REACT_APP_API_URL);
-  const response = await fetch(`${process.env.REACT_APP_API_URL}api/stocks?stock=spy&period=1Day&goBack=7`);
+  const response = await fetch(`/api/stocks?stock=spy&period=1Day&goBack=7`);
   const res = await response.json();
   console.log(res);
 }

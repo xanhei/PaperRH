@@ -9,7 +9,7 @@ app.get("/", (req, res) => {
   res.send("Server is running");
 });
 
-app.get("/api/stocks", async (req, res) => {
+app.get("/stocks", async (req, res) => {
   try {
     const send = await fetchChart(req.query.period, req.query.goBack, req.query.stock.toUpperCase());
     res.send(send);
