@@ -22,3 +22,5 @@ app.get("/stocks", async (req, res) => {
 // use dynamically set PORT value (or 5000 if PORT is not set)
 const port = process.env.PORT || 5000;
 app.listen(port, () => console.log(`listening on port ${port}`));
+
+//module.exports = app;

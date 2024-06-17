@@ -24,7 +24,7 @@ const defaultSearch = "SPY";
 const doSmth = async () => {
   const response = await fetch(`/api/stocks?stock=spy&period=1Day&goBack=7`);
   const res = await response.json();
-  console.log(res);
+  console.log(response);
 }
 
 
