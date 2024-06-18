@@ -5,7 +5,7 @@ require("dotenv").config();
 const app = express();
 
 const corsOps = {
-  origin: "https://paper-rh.vercel.app/*",
+  origin: ["https://paper-rh.vercel.app", "https://paper-rh.vercel.app/stocks"],
   optionsSuccessStatus: 200
 };
 app.use(cors());
