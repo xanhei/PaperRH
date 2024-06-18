@@ -8,7 +8,7 @@ const corsOps = {
   origin: "https://paper-rh.vercel.app/*",
   optionsSuccessStatus: 200
 };
-app.use(cors(corsOps));
+app.use(cors());
 
 //app.use(express.json()); //allows app.post route handler to parse json
 
