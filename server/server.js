@@ -3,7 +3,12 @@ const fetchChart = require("./auxFunctions/api.js");
 const cors = require('cors');
 require("dotenv").config();
 const app = express();
-app.use(cors());
+
+const corsOps = {
+  origin: "https://paper-rh.vercel.app/",
+  optionsSuccessStatus: 200
+};
+app.use(cors(corsOps));
 
 //app.use(express.json()); //allows app.post route handler to parse json
 
