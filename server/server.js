@@ -1,6 +1,6 @@
 const express = require("express");
 const fetchChart = require("./auxFunctions/api.js");
-const cors = require("cors");
+const cors = require('cors');
 require("dotenv").config();
 const app = express();
 app.use(cors());
