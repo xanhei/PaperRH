@@ -68,7 +68,7 @@ const formatTime = (s, timeframe) => {
   }
   else {
     let date = new Date(s);
-    const timeString = date.toLocaleTimeString("en-US");
+    const timeString = date.toLocaleTimeString("en-US", {timeZone: "America/New_York"});
     date = date.toDateString();
     let time, half;
     if(timeString[1] == ":") {
