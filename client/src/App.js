@@ -22,9 +22,9 @@ const params = "?sort=asc";
 const defaultSearch = "SPY";
 
 const doSmth = async () => {
-  const response = await fetch(`/api/stocks?stock=spy&period=1Day&goBack=7`);
+  const response = await fetch(`${process.env.REACT_APP_EXPRESS_URL}stocks?stock=spy&period=1Day&goBack=7`);
   const res = await response.json();
-  console.log(response);
+  console.log(res);
 }
 
 
@@ -60,7 +60,7 @@ function App() {
 
   //function for setting chart data parameters
   const focusChart = async (timeframe, goBack, term) => {
-    const response = await fetch(`/api/stocks?stock=${term}&period=${timeframe}&goBack=${goBack}`);
+    const response = await fetch(`${process.env.REACT_APP_EXPRESS_URL}stocks?stock=${term}&period=${timeframe}&goBack=${goBack}`);
     const [xData, yData] = await response.json();
     if(xData) {
       setCurrPrice((Math.ceil(yData[yData.length - 1] * 100) / 100).toFixed(2));

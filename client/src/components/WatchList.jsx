@@ -13,7 +13,7 @@ const url = "https://data.alpaca.markets/v2/stocks/bars";
 const params = "?sort=asc";
 
 const getData = async (term) => {
-  const response = await fetch(`/api/stocks?stock=${term}&period=5Min&goBack=0`);
+  const response = await fetch(`${process.env.REACT_APP_EXPRESS_URL}stocks?stock=${term}&period=5Min&goBack=0`);
   const [xData, yData] = await response.json();
 
   //set chart data if response is ok
