@@ -9,6 +9,10 @@ app.get("/", (req, res) => {
   res.send("Server is running");
 });
 
+app.get("/api", async (req, res) => {
+  res.send("In API directory");
+});
+
 app.get("/stocks", async (req, res) => {
   try {
     const send = await fetchChart(req.query.period, req.query.goBack, req.query.stock.toUpperCase());
