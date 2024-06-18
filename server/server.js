@@ -5,7 +5,7 @@ const app = express();
 
 //app.use(express.json()); //allows app.post route handler to parse json
 
-app.use("/", (req, res) => {
+app.get("/", (req, res) => {
   res.send("Server is running");
 });
 
