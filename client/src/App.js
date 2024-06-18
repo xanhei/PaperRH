@@ -60,6 +60,7 @@ function App() {
 
   //function for setting chart data parameters
   const focusChart = async (timeframe, goBack, term) => {
+    console.log(process.env.REACT_APP_EXPRESS_URL);
     const response = await fetch(`${process.env.REACT_APP_EXPRESS_URL}stocks?stock=${term}&period=${timeframe}&goBack=${goBack}`);
     const [xData, yData] = await response.json();
     if(xData) {
