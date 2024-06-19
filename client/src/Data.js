@@ -15,7 +15,7 @@ export const ChartData = {
 }
 
 export const ChartClass = class {
-  constructor(times, prices, width = 2.5) {
+  constructor(times, prices, width = 2) {
     this.data.labels = times;
     this.data.datasets[0].data = prices;
     this.data.datasets[0].borderWidth = width;
@@ -28,7 +28,7 @@ export const ChartClass = class {
         data: [],
         pointRadius: 0,
         pointHoverRadius: 0,
-        borderWidth: 2.5,
+        borderWidth: 2,
         borderColor: "rgb(31, 217, 22)",
       }
     ],

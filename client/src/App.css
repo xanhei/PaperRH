@@ -10,6 +10,9 @@ html {
 
 .head {
   position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .homeBtn {
@@ -17,11 +20,9 @@ html {
 }
 
 .search {
-  position: absolute;
-  top: 30%;
-  left: 24%;
   width: 20%;
-  height: 40%;
+  height: 30px;
+  margin-right: 40%;
   text-align: center;
 }
 
@@ -44,9 +45,14 @@ html {
 }
 .searchIcon {
   position: absolute;
-  top: 26%;
-  left: 3%;
-  width: 5%;
+  left: 40.5%;
+  top: 40%;
+  width: 20px;
+}
+
+.main {
+  display: flex;
+  justify-content: space-between;
 }
 
 .chartDiv {
@@ -68,14 +74,17 @@ html {
 }
 
 .buttonDiv {
-  position: relative;
-  height: 20%;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  width: 30%;
   margin-top: 2%;
 }
 
 .timeButton {
-  width: 5.1%;
+  width: 100%;
   aspect-ratio: 1;
+  box-sizing: border-box;
   cursor: pointer;
   color: white;
   font: "normal";
@@ -97,26 +106,26 @@ html {
 }
 
 .WatchList {
-  position: absolute;
-  left: 65%;
-  top: 10%;
-  width: 15%;
-  height: 70%;
   border: 1px solid;
   border-radius: 5px;
   border-color: #333;
+  width: 15%;
+  min-width: 215px;
+  margin-right: 14%;
 }
 
 .listHead {
   text-align: center;
+  cursor: default;
 }
 
 .listView {
-  margin-top: 0px;
-  margin-bottom: 0px;
   display: flex;
   flex-direction: row;
-  flex-direction: row;
+  justify-content: space-around;
+  align-items: center;
+  font-size: 80%;
+  max-width: 100%;
 }
 
 .listView:hover {
@@ -125,23 +134,52 @@ html {
 }
 
 .watchName {
-  font-size: 100%;
-  margin-left: 7%;
-  margin-top: 10%;
-  margin-bottom: 7%;
-  min-width: 25%;
+  font-weight: bold;
 }
 
 .watchChart {
-  margin-top: 6%;
-  margin-bottom: 7%;
-  max-height: 40%;
+  max-height: 50%;
 }
 
 .numberPercent {
-  margin-left: 5%;
-  margin-top: 2%;
-  font-size: 80%;
-  min-width: 25%;
   text-align: center;
+}
+
+@media (max-width: 900px) {
+  .main {
+    flex-direction: column;
+    align-content: center;
+    align-items: center;
+  }
+  .search {
+    margin-right: 2%;
+    width: 81%;
+  }
+  .searchBar {
+    text-indent: 8%;
+  }
+  .searchIcon {
+    left: 18%;
+  }
+  .chartDiv {
+    position: static;
+    margin-left: 0%;
+    width: 100%;
+  }
+  .chartText {
+    margin-left: 5%;
+  }
+  .buttonDiv {
+    justify-content: space-around;
+    margin-left: 15%;
+    width: 70%;
+  }
+  .timeButton {
+    max-width: 30px;
+  }
+  .WatchList {
+    width: 90%;
+    margin-right: 0%;
+    border-color: transparent;
+  }
 }

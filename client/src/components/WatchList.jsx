@@ -50,7 +50,7 @@ const WatchList = (props) => {
           <div className="listView" key={index} onClick={() => props.click(stock)}>
             <h3 className="watchName">{stock}</h3>
             <div className="watchChart">
-              <LineChart chartData={chartList ? chartList[index].data : ChartData} options={listOptions}></LineChart>
+              <LineChart className="abcd" chartData={chartList ? chartList[index].data : ChartData} options={listOptions}></LineChart>
             </div>
             <div className="numberPercent">
               <p>${chartList ? (Math.ceil(chartList[index].data.datasets[0].data.slice(-1)[0] * 100) / 100).toFixed(2) : "123.45"}</p>

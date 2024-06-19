@@ -116,32 +116,34 @@ function App() {
           </img>
         </div>
       </div>
-      <div className="chartDiv">
-        <h1 className="chartText">{searchTerm}</h1>
-        <h1 className="chartText">${showPrice ? showPrice : currPrice}</h1>
-        {
-          chartData != undefined ?
-          <LineChart className="portChart" chartData={chartData.data} options={options} plugins={[verticalHoverLine, unHover]}></LineChart> :
-          <h2>Chart data not found for ${searchTerm}</h2>
-        }
-        <div className="buttonDiv">
-          <button className="timeButton" autoFocus onFocus={() => btnClick("5Min", 0)}>1D</button>
-          <button className="timeButton" onFocus={() => btnClick("1Hour", 7)}>1W</button>
-          <button className="timeButton" onFocus={() => btnClick("1Day", 1)}>1M</button>
-          <button className="timeButton" onFocus={() => btnClick("1Day", 3)}>3M</button>
-          <button className="timeButton" onFocus={() => btnClick("1Day", 6)}>6M</button>
-          <button className="timeButton" onFocus={() => btnClick("1Day", 12)}>1Y</button>
+      <div className="main">
+        <div className="chartDiv">
+          <h1 className="chartText">{searchTerm}</h1>
+          <h1 className="chartText">${showPrice ? showPrice : currPrice}</h1>
+          {
+            chartData != undefined ?
+            <LineChart className="portChart" chartData={chartData.data} options={options} plugins={[verticalHoverLine, unHover]}></LineChart> :
+            <h2>Chart data not found for ${searchTerm}</h2>
+          }
+          <div className="buttonDiv">
+            <button className="timeButton" autoFocus onFocus={() => btnClick("5Min", 0)}>1D</button>
+            <button className="timeButton" onFocus={() => btnClick("1Hour", 7)}>1W</button>
+            <button className="timeButton" onFocus={() => btnClick("1Day", 1)}>1M</button>
+            <button className="timeButton" onFocus={() => btnClick("1Day", 3)}>3M</button>
+            <button className="timeButton" onFocus={() => btnClick("1Day", 6)}>6M</button>
+            <button className="timeButton" onFocus={() => btnClick("1Day", 12)}>1Y</button>
+          </div>
+          <hr className="line"></hr>
+          <button onClick={() => doSmth()}>Click</button>
         </div>
-        <hr className="line"></hr>
-        <button onClick={() => doSmth()}>Click</button>
+        {
+          portView ?
+          <>
+            <WatchList title={"WatchList"} stocks={["SPY","AMD"]} click={(stock) => wlUpdate(stock)}></WatchList>
+          </> :
+          <></>
+        }
       </div>
-      {
-        portView ?
-        <>
-          <WatchList title={"WatchList"} stocks={["SPY","AMD"]} click={(stock) => wlUpdate(stock)}></WatchList>
-        </> :
-        <></>
-      }
     </div>
   );
 }
