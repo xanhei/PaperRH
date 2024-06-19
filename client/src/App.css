@@ -146,10 +146,11 @@ html {
 }
 
 @media (max-width: 900px) {
-  .main {
-    flex-direction: column;
-    align-content: center;
-    align-items: center;
+  .head {
+    height: 80px;
+  }
+  .homeBtn {
+    font-size: 5vw;
   }
   .search {
     margin-right: 2%;
@@ -160,6 +161,11 @@ html {
   }
   .searchIcon {
     left: 18%;
+  }
+  .main {
+    flex-direction: column;
+    align-content: center;
+    align-items: center;
   }
   .chartDiv {
     position: static;
