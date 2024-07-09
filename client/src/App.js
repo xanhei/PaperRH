@@ -150,14 +150,14 @@ function App() {
 
   const init = () => {
     //subscribe to each => onMessage, change price for that stock in prices map
-    const es = new EventSource(`http://localhost:5000/ws?stocks=${JSON.stringify(arr)}`);
+    /*const es = new EventSource(`http://localhost:5000/ws?stocks=${JSON.stringify(arr)}`);
     es.onmessage = (event) => {
       update(event.data);
     }
     es.onerror = () => {
       console.log("Server closed connection");
       es.close();
-    }
+    }*/
   }
 
   //initialize chart
