@@ -17,6 +17,7 @@ html {
 
 .homeBtn {
   margin-left: 2%;
+  cursor: pointer;
 }
 
 .search {
@@ -69,10 +70,6 @@ html {
   font-size: 230%;
 }
 
-.portChart {
-  height: 80%;
-}
-
 .buttonDiv {
   display: flex;
   flex-direction: row;
@@ -105,7 +102,7 @@ html {
   margin-bottom: 0px;
 }
 
-.WatchList {
+.SidePanel {
   border: 1px solid;
   border-radius: 5px;
   border-color: #333;
@@ -138,11 +135,80 @@ html {
 }
 
 .watchChart {
-  max-height: 50%;
+  max-height: 55%;
 }
 
 .numberPercent {
   text-align: center;
+}
+
+.buySell {
+  display: flex;
+  padding-top: 5%;
+  padding-bottom: 5%;
+}
+
+.exchangeBtn {
+  background-color: transparent;
+  border: 0px;
+  outline: 0px;
+  margin-left: 6%;
+  color: white;
+  font-size: 120%;
+  cursor: pointer;
+}
+
+.exchangeBtn:hover {
+  color: rgb(31, 217, 22);
+}
+
+.exchangeBtn:focus {
+  color: rgb(31, 217, 22);
+}
+
+.exchangeSection {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-left: 5%;
+}
+
+.exchangeInput, .exAmount {
+  background-color: black;
+  border: 1px solid;
+  border-radius: 5px;
+  border-color: #333;
+  color: white;
+  outline: 0px;
+  margin-right: 5%;
+  width: 40%;
+  height: 30px;
+}
+
+.exAmount {
+  text-align: left;
+}
+
+.submit {
+  background-color: transparent;
+  color: white;
+  cursor: pointer;
+  border: 1px solid;
+  border-color: #333;
+  border-radius: 50px;
+  width: 60%;
+  height: 8%;
+  margin-left: 20%;
+  margin-top: 5%;
+  margin-bottom: 5%;
+}
+
+.submit:hover {
+  background-color: #333;
+}
+
+.submit:active {
+  background-color: #292929;
 }
 
 @media (max-width: 900px) {

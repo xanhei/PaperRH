@@ -9,9 +9,11 @@ import { Line } from 'react-chartjs-2';
 //in house assets
 import LineChart from "./components/LineChart.jsx";
 import WatchList from "./components/WatchList.jsx";
+import Exchange from './components/buySell.jsx';
 import { verticalHoverLine } from "./chartAssets/verticalLine.js";
 import ctt from "./chartAssets/ctt.js";
 import { focusBtn } from "./auxFunctions/functions.js";
+import { addData } from './chartAssets/updateData.js';
 
 import { ChartData, ChartClass, defaultOptions, fetchOptions } from "./Data.js" // NEED TO SPECIFY ".js" FOR NAMED EXPORT
 
@@ -19,24 +21,41 @@ import { ChartData, ChartClass, defaultOptions, fetchOptions } from "./Data.js" 
 const url = "https://data.alpaca.markets/v2/stocks/bars";
 const params = "?sort=asc";
 
+//test parameters to be changed later
 const defaultSearch = "SPY";
+const arr = ["SPY","AMD","NVDA"];
 
-const doSmth = async () => {
-  const response = await fetch(`${process.env.REACT_APP_EXPRESS_URL}stocks?stock=spy&period=1Day&goBack=7`);
-  const res = await response.json();
-  console.log(res);
-}
-
+//const doSmth = async () => {
+  /*const es = new EventSource(`http://localhost:5000/ws?stocks=${JSON.stringify(arr)}`);
+  es.onmessage = (message) => {console.log(message.data)};
+  es.onerror = () => {es.close()};*/
+  //const chart = document.querySelectorAll(".wlChart").forEach(chart => console.log(chart.getAttribute("stock")));
+//}
 
 function App() {
   const [chartData, setChartData] = useState(); //data drawn on chart
   const [searchTerm, setSearchTerm] = useState(defaultSearch); //term used to fetch data for correct stock
-  const [frameState, setFrameState] = useState(); //bar size that needs to be fetched
-  const [start, setStart] = useState(); //least recent day used to fetch data
+  const [frameState, setFrameState] = useState("5Min"); //bar size that needs to be fetched
+  const [start, setStart] = useState(0); //least recent day used to fetch data
   const [currPrice, setCurrPrice] = useState(0); //most recent price
   const [showPrice, setShowPrice] = useState(); //display price
+  const [prices, setPrices] = useState({map: new Map()}); //websocket prices
   const [portView, setPortView] = useState(true); //whether current view is portfolio (set to true) or a stock (set to false)
   const [options, setOptions] = useState(defaultOptions); //options used for main chart
+
+  const [k, setK] = useState(0);
+
+  const doSmth = () => {
+    const list = document.querySelectorAll(".wlChart");
+    let pick;
+    for(let i = 0; i < list.length; i++)
+      if(list[i].getAttribute("stock") == "SPY") {
+        pick = list[i];
+        break;
+      }
+    const chart = ChartJS.getChart(pick);
+    addData(chart, 1, 545);
+  }
 
   //unhover listener (couldn't find out how to import correctly)
   const unHover = {
@@ -63,6 +82,16 @@ function App() {
     const response = await fetch(`${process.env.REACT_APP_EXPRESS_URL}stocks?stock=${term}&period=${timeframe}&goBack=${goBack}`);
     const [xData, yData] = await response.json();
     if(xData) {
+      const price = prices.map.get(term);
+      if(price !== undefined) {
+        xData.push(1);
+        yData.push(price);
+      }
+      if(timeframe == "5Min") {
+        for(let i = xData.length; i < 193; i++) {
+          xData.push(1);
+        }
+      }
       setCurrPrice((Math.ceil(yData[yData.length - 1] * 100) / 100).toFixed(2));
       setShowPrice((Math.ceil(yData[yData.length - 1] * 100) / 100).toFixed(2));
       setChartData(new ChartClass(xData, yData));
@@ -75,7 +104,7 @@ function App() {
 
   //functions that change chart and state variables
   const btnClick = (timeframe, goBack) => {
-    focusBtn();
+    focusBtn(".timeButton", true);
     setFrameState(timeframe);
     setStart(goBack);
     focusChart(timeframe, goBack, searchTerm);
@@ -83,26 +112,67 @@ function App() {
 
   const newSearch = () => {
     const st = document.querySelector(".searchBar").value.toUpperCase();
-    if(st == "")
+    if(st === "")
       return;
     setSearchTerm(st);
+    setPortView(false);
     focusChart(frameState, start, st);
   }
 
   const wlUpdate = (stock) => {
     setSearchTerm(stock);
+    setPortView(false);
     focusChart(frameState, start, stock);
   }
 
+  //update with realtime prices
+  const update = async (data) => {
+    const m = await JSON.parse(data);
+    console.log(m);
+    setPrices((prices) => {
+      prices.map.set(m.S, m.c);
+      return {map: prices.map};
+    });
+    const list = document.querySelectorAll(".wlChart");
+    let pick;
+    for(let i = 0; i < list.length; i++) {
+      if(list[i].getAttribute("stock") === m.S) {
+        pick = list[i];
+        break;
+      }
+    }
+    if(pick)
+      addData(ChartJS.getChart(pick), 1, m.c);
+    //if(m.S === searchTerm)
+        //addData(ChartJS.getChart(".portChart"), 1, m.c);
+    //use setPrices to change prices map to include latest stock/price
+  }
+
+  const init = () => {
+    //subscribe to each => onMessage, change price for that stock in prices map
+    const es = new EventSource(`http://localhost:5000/ws?stocks=${JSON.stringify(arr)}`);
+    es.onmessage = (event) => {
+      update(event.data);
+    }
+    es.onerror = () => {
+      console.log("Server closed connection");
+      es.close();
+    }
+  }
+
   //initialize chart
-  useEffect(() => {
-    focusChart("5Min", 0, searchTerm);
-  }, []);
+
+  useEffect(() => {focusChart(frameState, start, searchTerm)}, [prices.map.get(searchTerm)]);
+  useEffect(() => {init()}, []);
 
   return (
     <div className="app">
       <div className="head">
-        <h1 className="homeBtn">App</h1>
+        <h1 className="homeBtn" onClick={() => {
+          setSearchTerm("SPY");
+          focusChart(frameState, start, "SPY");
+          setPortView(true);
+        }}>App</h1>
         <div className="search">
           <input
             className="searchBar"
@@ -122,7 +192,7 @@ function App() {
           <h1 className="chartText">${showPrice ? showPrice : currPrice}</h1>
           {
             chartData != undefined ?
-            <LineChart className="portChart" chartData={chartData.data} options={options} plugins={[verticalHoverLine, unHover]}></LineChart> :
+            <LineChart name="portChart" stock={searchTerm} chartData={chartData.data} options={options} plugins={[verticalHoverLine, unHover]}></LineChart> :
             <h2>Chart data not found for ${searchTerm}</h2>
           }
           <div className="buttonDiv">
@@ -136,13 +206,17 @@ function App() {
           <hr className="line"></hr>
           <button onClick={() => doSmth()}>Click</button>
         </div>
-        {
-          portView ?
-          <>
-            <WatchList title={"WatchList"} stocks={["SPY","AMD"]} click={(stock) => wlUpdate(stock)}></WatchList>
-          </> :
-          <></>
-        }
+        <div className="SidePanel">
+          {
+            portView ?
+            <>
+              <WatchList key={k} title={"Watchlist"} stocks={arr} curr={prices} click={(stock) => wlUpdate(stock)}></WatchList>
+            </> :
+            <>
+              <Exchange></Exchange>
+            </>
+          }
+        </div>
       </div>
     </div>
   );

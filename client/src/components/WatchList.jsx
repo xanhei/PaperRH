@@ -32,6 +32,15 @@ const WatchList = (props) => {
     let temp = [];
     for(let i = 0; i < props.stocks.length; i++) {
       const a = await getData(props.stocks[i]);
+      //console.log(a.data.datasets[0].data);
+      const price = props.curr.map.get(props.stocks[i]);
+      if(price !== undefined) {
+        a.data.labels.push(1);
+        a.data.datasets[0].data.push(price);
+      }
+      for(let i = a.data.labels.length; i < 193; i++) {
+        a.data.labels.push(1);
+      }
       temp.push(a);
     }
     setChartList(temp);
@@ -42,7 +51,7 @@ const WatchList = (props) => {
     getList();
   }, []);
   return (
-    <div className="WatchList">
+    <div key={props.stock}>
       <h3 className="listHead">{props.title}</h3>
       <hr className="line"></hr>
       {
@@ -50,7 +59,7 @@ const WatchList = (props) => {
           <div className="listView" key={index} onClick={() => props.click(stock)}>
             <h3 className="watchName">{stock}</h3>
             <div className="watchChart">
-              <LineChart className="abcd" chartData={chartList ? chartList[index].data : ChartData} options={listOptions}></LineChart>
+              <LineChart name="wlChart" stock={stock} chartData={chartList ? chartList[index].data : ChartData} options={listOptions}></LineChart>
             </div>
             <div className="numberPercent">
               <p>${chartList ? (Math.ceil(chartList[index].data.datasets[0].data.slice(-1)[0] * 100) / 100).toFixed(2) : "123.45"}</p>
