@@ -1,11 +1,12 @@
 const express = require("express");
-const fetchChart = require("./auxFunctions/api.js");
+const chartFunc = require("./auxFunctions/api.js");
 const cors = require('cors');
 const WebSocket = require("ws");
 require("dotenv").config();
 const app = express();
+const wsEndpoint = require("express-ws")(app);
 
-let ws = undefined;
+let AlpacaWS = undefined;
 
 const corsOps = {
   origin: ["https://paper-rh.vercel.app", "https://paper-rh.vercel.app/stocks"],
@@ -26,7 +27,7 @@ app.get("/api", async (req, res) => {
 //historical stock data (15min delay)
 app.get("/stocks", async (req, res) => {
   try {
-    const send = await fetchChart(req.query.period, req.query.goBack, req.query.stock.toUpperCase());
+    const send = await chartFunc.getData(req.query.period, req.query.goBack, req.query.stock.toUpperCase());
     res.send(send);
   } catch(error) {
     console.error(error);
@@ -34,74 +35,96 @@ app.get("/stocks", async (req, res) => {
   }
 });
 
+app.get("/percent", async (req, res) => {
+  try {
+    const send = [await chartFunc.percentChange(req.query.stock)];
+    res.send(send);
+  } catch(error) {
+    console.error(error);
+    res.send(undefined);
+  }
+});
+
 //minute bars (up to date)
-app.get("/ws", async (req, res) => {
-  //const arr = await JSON.parse(res.query.stocks);
-  let arr = await JSON.parse(req.query.stocks);
-  console.log(arr);
+app.ws("/ws", async (ws, req) => {
+  //let arr = await JSON.parse(req.query.stocks);
+  //console.log(arr);
+  /*res.set({
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    'Content-Encoding': 'none',
+    'Connection': 'keep-alive'
+  });
+  res.flushHeaders();*/
+
+  console.log("Client connected");
+  let arr = [];
+
+  ws.on("message", async (message) => {
+    const m = await JSON.parse(message);
+    console.log(m);
+    if(m.action === "s") {
+      const subMsg = {
+        action: "subscribe",
+        bars: m.stocks
+      };
+      AlpacaWS.send(JSON.stringify(subMsg));
+    }
+    else if(m.action === "u") {
+      const unSub = {
+        action: "unsubscribe",
+        bars: m.stocks
+      };
+      AlpacaWS.send(JSON.stringify(unSub));
+    }
+  })
   
   //if no clients are connected, create new ws, otherwise, add new clients stocks
-  if(!ws) {
-    res.set({
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
-      'Content-Encoding': 'none',
-      'Connection': 'keep-alive'
-    });
-    res.flushHeaders();
-
-    console.log("Client connected");
-
-    ws = new WebSocket("wss://stream.data.alpaca.markets/v2/iex");
+  if(!AlpacaWS) {
+    AlpacaWS = new WebSocket("wss://stream.data.alpaca.markets/v2/iex");
 
     //authentication process w/ Alpaca
-    ws.on("open", () => {
+    AlpacaWS.on("open", () => {
       const authMsg = {
         action: "auth",
         key: process.env.APCA_API_KEY_ID,
         secret: process.env.APCA_API_SECRET_KEY
       };
-      ws.send(JSON.stringify(authMsg));
-
-      const subMsg = {
-        action: "subscribe",
-        bars: arr
-      };
-      ws.send(JSON.stringify(subMsg));
+      AlpacaWS.send(JSON.stringify(authMsg));
+      ws.send("open"); //allows client to send subscription messages without causing errors
     });
   }
-  else {
-    const subMsg = {
-      action: "subscribe",
-      bars: arr
-    };
-    ws.send(JSON.stringify(subMsg));
-  }
+  else
+    ws.send("open");
 
   //message handler
-  ws.on("message", async (message) => {
+  AlpacaWS.on("message", async (message) => {
     const m = await JSON.parse(message);
-    if(m[0].T === "b")
-      res.write(`data: ${JSON.stringify(m[0])}\n\n`);
+    if(m[0].T === "b") {
+      //res.write(`data: ${JSON.stringify(m[0])}\n\n`);
+      ws.send(m[0]);
+      console.log(m[0].S)
+    }
     else
       console.log(m[0]);
 
     //close ws connection when there are no active subscriptions
     if(m[0].T === "subscription" && !m[0].bars) {
-      ws.close();
-      ws = undefined;
-      res.end();
+      if(AlpacaWS)
+        AlpacaWS.close();
+      AlpacaWS = undefined;
+      ws.end();
     }
   });
 
   //client connection close
-  res.on("close", () => {
-    console.log("Client closed SSE");
-    const unSub = {
+  ws.on("close", () => {
+    console.log("Client closed WS");
+    /*const unSub = {
       action: "unsubscribe",
       bars: arr
     };
-    ws.send(JSON.stringify(unSub));
+    AlpacaWS.send(JSON.stringify(unSub));*/
   });
 });
 

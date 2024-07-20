@@ -12,18 +12,19 @@ import WatchList from "./components/WatchList.jsx";
 import Exchange from './components/buySell.jsx';
 import { verticalHoverLine } from "./chartAssets/verticalLine.js";
 import ctt from "./chartAssets/ctt.js";
-import { focusBtn } from "./auxFunctions/functions.js";
-import { addData } from './chartAssets/updateData.js';
+import { focusBtn, commaFormat, percentFormat, chartSubHeader, unSubCheck } from "./auxFunctions/functions.js";
+import { addData, changeColor } from './chartAssets/updateData.js';
 
-import { ChartData, ChartClass, defaultOptions, fetchOptions } from "./Data.js" // NEED TO SPECIFY ".js" FOR NAMED EXPORT
+import { ChartData, ChartClass, defaultOptions, fetchOptions, defaultAccount } from "./Data.js" // NEED TO SPECIFY ".js" FOR NAMED EXPORT
 
 //variables to fetch market data
 const url = "https://data.alpaca.markets/v2/stocks/bars";
 const params = "?sort=asc";
+let ws;
 
 //test parameters to be changed later
 const defaultSearch = "SPY";
-const arr = ["SPY","AMD","NVDA"];
+let arr = ["SPY","AMD","AAPL"];
 
 //const doSmth = async () => {
   /*const es = new EventSource(`http://localhost:5000/ws?stocks=${JSON.stringify(arr)}`);
@@ -42,19 +43,14 @@ function App() {
   const [prices, setPrices] = useState({map: new Map()}); //websocket prices
   const [portView, setPortView] = useState(true); //whether current view is portfolio (set to true) or a stock (set to false)
   const [options, setOptions] = useState(defaultOptions); //options used for main chart
+  const [basePrice, setBasePrice] = useState(); //used for price change calculation
+  const [loggedIn, setLoggedIn] = useState(false);
 
   const [k, setK] = useState(0);
 
-  const doSmth = () => {
-    const list = document.querySelectorAll(".wlChart");
-    let pick;
-    for(let i = 0; i < list.length; i++)
-      if(list[i].getAttribute("stock") == "SPY") {
-        pick = list[i];
-        break;
-      }
-    const chart = ChartJS.getChart(pick);
-    addData(chart, 1, 545);
+  const doSmth = async () => {
+    const pick = ChartJS.getChart(document.querySelectorAll(".wlChart" && "[stock='AMD']"));
+    changeColor(pick, "green");
   }
 
   //unhover listener (couldn't find out how to import correctly)
@@ -62,9 +58,8 @@ function App() {
     id: "unHover",
     beforeEvent(chart, args) {
       const event = args.event;
-      if(event.type == "mouseout") {
+      if(event.type === "mouseout")
         setShowPrice(undefined);
-      }
     }
   }
   
@@ -72,29 +67,47 @@ function App() {
   let ops = defaultOptions;
   ops.onHover = (e, arr) => {
     if(arr.length > 0)
-      setShowPrice((Number(Math.ceil(arr[0].element.$context.raw * 100) / 100).toFixed(2)));
-    else
-      setShowPrice(undefined);
+      setShowPrice(commaFormat(arr[0].element.$context.raw));
   }
 
   //function for setting chart data parameters
-  const focusChart = async (timeframe, goBack, term) => {
+  const focusChart = async (timeframe, goBack, term, pv = portView) => {
+    if(loggedIn && pv) {
+      setSearchTerm("Portfolio");
+      term = "SPY";
+    }
     const response = await fetch(`${process.env.REACT_APP_EXPRESS_URL}stocks?stock=${term}&period=${timeframe}&goBack=${goBack}`);
     const [xData, yData] = await response.json();
     if(xData) {
+      //if(!arr.includes(term)) //subscribe to new stock if it isnt already on the list
       const price = prices.map.get(term);
       if(price !== undefined) {
         xData.push(1);
         yData.push(price);
       }
-      if(timeframe == "5Min") {
+      if(loggedIn && pv) {
+        for(let i = 0; i < yData.length; i++) {
+          yData[i] = defaultAccount.value;
+        }
+      }
+      if(timeframe === "5Min") {
         for(let i = xData.length; i < 193; i++) {
           xData.push(1);
         }
       }
-      setCurrPrice((Math.ceil(yData[yData.length - 1] * 100) / 100).toFixed(2));
-      setShowPrice((Math.ceil(yData[yData.length - 1] * 100) / 100).toFixed(2));
-      setChartData(new ChartClass(xData, yData));
+      let bp;
+      if(timeframe == "5Min") {
+        const a = await fetch(`${process.env.REACT_APP_EXPRESS_URL}percent?stock=${term}`);
+        const res = await a.json();
+        bp = res[0].bars[term][0].c;
+      }
+      else
+        bp = yData[0];
+      const color = yData[yData.length - 1] >= bp ? "rgb(31, 217, 22)" : "rgb(242, 80, 5)";
+      setBasePrice(bp);
+      setCurrPrice(commaFormat(yData[yData.length - 1]));
+      setShowPrice(commaFormat(yData[yData.length - 1]));
+      setChartData(new ChartClass(xData, yData, color));
     }
     else {
       setChartData(undefined);
@@ -111,18 +124,20 @@ function App() {
   }
 
   const newSearch = () => {
+    unSubCheck(arr, searchTerm, ws);
     const st = document.querySelector(".searchBar").value.toUpperCase();
     if(st === "")
       return;
     setSearchTerm(st);
     setPortView(false);
-    focusChart(frameState, start, st);
+    ws.send(JSON.stringify({action: "s", stocks: [st]}));
+    focusChart(frameState, start, st, false);
   }
 
   const wlUpdate = (stock) => {
     setSearchTerm(stock);
     setPortView(false);
-    focusChart(frameState, start, stock);
+    focusChart(frameState, start, stock, false);
   }
 
   //update with realtime prices
@@ -150,18 +165,26 @@ function App() {
 
   const init = () => {
     //subscribe to each => onMessage, change price for that stock in prices map
-    /*const es = new EventSource(`http://localhost:5000/ws?stocks=${JSON.stringify(arr)}`);
-    es.onmessage = (event) => {
-      update(event.data);
+    ws = new WebSocket(process.env.REACT_APP_WS);//new EventSource(`http://localhost:5000/ws?stocks=${JSON.stringify(arr)}`);
+    ws.onmessage = (event) => {
+      console.log(event.data);
+      if(event.data === "open")
+        ws.send(JSON.stringify({action: "s", stocks: arr}));
+      //update(event.data);
     }
-    es.onerror = () => {
+    ws.onerror = () => {
       console.log("Server closed connection");
-      es.close();
-    }*/
+      ws.close();
+    }
+    ws.onclose = () => {
+      ws.send(JSON.stringify({m: "u", stocks: arr}));
+    }
+    /*ws.onopen = () => {
+      ws.send(JSON.stringify({action: "s", stocks: arr}));
+    };*/
   }
 
   //initialize chart
-
   useEffect(() => {focusChart(frameState, start, searchTerm)}, [prices.map.get(searchTerm)]);
   useEffect(() => {init()}, []);
 
@@ -169,8 +192,9 @@ function App() {
     <div className="app">
       <div className="head">
         <h1 className="homeBtn" onClick={() => {
+          unSubCheck(arr, searchTerm, ws);
           setSearchTerm("SPY");
-          focusChart(frameState, start, "SPY");
+          focusChart(frameState, start, defaultSearch, true);
           setPortView(true);
         }}>App</h1>
         <div className="search">
@@ -191,8 +215,13 @@ function App() {
           <h1 className="chartText">{searchTerm}</h1>
           <h1 className="chartText">${showPrice ? showPrice : currPrice}</h1>
           {
-            chartData != undefined ?
-            <LineChart name="portChart" stock={searchTerm} chartData={chartData.data} options={options} plugins={[verticalHoverLine, unHover]}></LineChart> :
+            chartData !== undefined ?
+            <>
+            {
+              basePrice ? <p className="chartSubHead">{chartSubHeader(basePrice, showPrice ? showPrice : currPrice)}</p> : <></>
+            }
+              <LineChart name="portChart" stock={searchTerm} chartData={chartData.data} options={options} plugins={[verticalHoverLine, unHover]}></LineChart>
+            </> :
             <h2>Chart data not found for ${searchTerm}</h2>
           }
           <div className="buttonDiv">
@@ -213,7 +242,25 @@ function App() {
               <WatchList key={k} title={"Watchlist"} stocks={arr} curr={prices} click={(stock) => wlUpdate(stock)}></WatchList>
             </> :
             <>
-              <Exchange></Exchange>
+            {
+              chartData !== undefined ?
+              <Exchange className="Exchange" stock={searchTerm} marketPrice={currPrice} contains={arr.includes(searchTerm)} wlChange={() => {
+                //remove if wl contains stock
+                if(arr.includes(searchTerm))
+                  arr = arr.filter(stock => stock !== searchTerm);
+                //add if wl does not contain stock
+                else {
+                  if(arr.length < 5)
+                    arr.push(searchTerm);
+                  else {
+                    alert("Max Watchlist size is 5");
+                    return false;
+                  }
+                }
+                return true;
+              }}></Exchange> :
+              <></>
+             }
             </>
           }
         </div>

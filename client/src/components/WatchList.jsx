@@ -5,8 +5,10 @@ import { Line } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import LineChart from "./LineChart";
 import { listOptions, ChartData, ChartClass } from "../Data";
+import { percentFormat } from "../auxFunctions/functions.js";
+import { changeColor } from "../chartAssets/updateData.js";
 
-
+//let basePrices;
 
 //variables to fetch market data
 const url = "https://data.alpaca.markets/v2/stocks/bars";
@@ -14,25 +16,25 @@ const params = "?sort=asc";
 
 const getData = async (term) => {
   const response = await fetch(`${process.env.REACT_APP_EXPRESS_URL}stocks?stock=${term}&period=5Min&goBack=0`);
+  //`${process.env.REACT_APP_EXPRESS_URL}stocks?stock=${term}&period=${timeframe}&goBack=${goBack}`
   const [xData, yData] = await response.json();
-
+  const c = new ChartClass(xData, yData, 1);
   //set chart data if response is ok
   if(xData) {
-    return new ChartClass(xData, yData, 1);
+    return new ChartClass(xData, yData, "rgb(31, 217, 22)", 1);
   }
   return {data: ChartData}; //return as single item map so that formatting is consistent with ChartClass
 }
 
-
-
 const WatchList = (props) => {
   const [chartList, setChartList] = useState();
+  const [basePrices, setBasePrices] = useState();
+  const [percents, setPercents] = useState();
 
   const getList = async () => {
     let temp = [];
     for(let i = 0; i < props.stocks.length; i++) {
       const a = await getData(props.stocks[i]);
-      //console.log(a.data.datasets[0].data);
       const price = props.curr.map.get(props.stocks[i]);
       if(price !== undefined) {
         a.data.labels.push(1);
@@ -44,12 +46,39 @@ const WatchList = (props) => {
       temp.push(a);
     }
     setChartList(temp);
-    return temp;
+  }
+
+  const getPercents = async () => {
+    if(!chartList)
+      return;
+    let bp = [];
+    if(!basePrices) {
+      for(let i = 0; i < props.stocks.length; i++) {
+        const response = await fetch(`${process.env.REACT_APP_EXPRESS_URL}percent?stock=${props.stocks[i]}`);
+        const res = await response.json();
+        bp.push(res[0].bars[props.stocks[i]][0].c);
+      }
+      setBasePrices(bp);
+    }
+    let per = [];
+    const use = basePrices ? basePrices : bp; //not my best work :(
+    for(let i = 0; i < props.stocks.length; i++) {
+      let curr = percentFormat(use[i], chartList[i].data.datasets[0].data[chartList[i].data.datasets[0].data.length - 1]);
+      const color = curr[0] === "+" ? "rgb(31, 217, 22)" : "rgb(242, 80, 5)";
+      const focusElement = document.querySelector(".percent" && `#${props.stocks[i]}`);
+      if(focusElement)
+        focusElement.style.color = color;
+      changeColor(ChartJS.getChart(document.querySelector(`.wlChart[stock='${props.stocks[i]}']`)), color)
+      per.push(curr);
+    }
+    setPercents(per);
   }
   
   useEffect(() => {
     getList();
   }, []);
+
+  useEffect(() => {getPercents()}, [chartList])
   return (
     <div key={props.stock}>
       <h3 className="listHead">{props.title}</h3>
@@ -63,7 +92,7 @@ const WatchList = (props) => {
             </div>
             <div className="numberPercent">
               <p>${chartList ? (Math.ceil(chartList[index].data.datasets[0].data.slice(-1)[0] * 100) / 100).toFixed(2) : "123.45"}</p>
-              <p>+0.00%</p>
+              <p className="percent" id={stock}>{basePrices && chartList && percents ? percents[index] : "+0.00"}%</p>
             </div>
           </div>
         )

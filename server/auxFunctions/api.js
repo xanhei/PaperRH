@@ -46,16 +46,28 @@ const getData = async (timeframe, goBack, term) => {
     return [undefined, undefined];
 }
 
+//function used to show % change of a stock on daily view
+const percentChange = async (term) => {
+  const end = new Date();
+  const start = new Date(end.getFullYear(), end.getMonth(), end.getDate() - 7);
+  const fetchDate = await findOpen(`${start.getFullYear()}-${start.getMonth() + 1}-${start.getDate()}`, `${end.getFullYear()}-${end.getMonth() + 1}-${end.getDate()}`, true);
+  let params = `?sort=asc&symbols=${term}&timeframe=1Day&start=${fetchDate}&end=${fetchDate}`;
+  const response = await fetch(`https://data.alpaca.markets/v2/stocks/bars${params}`, fetchOptions);
+  const res = await response.json();
+  return res;
+}
+
 /* aux functions used by getData() */
 
 //function to find the most recent market open if current day is market holiday (for 1D)
-const findOpen = async (startDate, endDate) => {
+const findOpen = async (startDate, endDate, percent = false) => {
   const url = "https://paper-api.alpaca.markets/v2/calendar";
   const response = await fetch(`${url}?start=${startDate}&end=${endDate}`, fetchOptions);
   const res = await response.json();
   const today = new Date();
   const wait = (today.toISOString().substring(0, 10) == res[res.length - 1].date && (today.getHours() < 9 || today.getHours() == 9 && today.getMinutes() < 30));
-  return wait ? res[res.length - 2].date : res[res.length - 1].date;
+  const i = percent ? 1 : 0;
+  return wait ? res[res.length - 2 - i].date : res[res.length - 1 - i].date;
 }
 
 //formats time to display on chart tooltip
@@ -137,6 +149,8 @@ const ltdPriceFormat = (arr, isMinBar) => {
   }
   else {
     for(let i = 0; i < arr.length; i++) {
+      if(arr[i].t.substring(11, 16) == "00:00")
+          continue;
       res.push(Number(arr[i].o));
       if(arr[i].t.substring(11, 16) == "23:00")
         res.push(Number(arr[i].c));
@@ -145,4 +159,5 @@ const ltdPriceFormat = (arr, isMinBar) => {
   return res;
 }
 
-module.exports = getData;
+exports.getData = getData;
+exports.percentChange = percentChange;

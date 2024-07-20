@@ -15,10 +15,11 @@ export const ChartData = {
 }
 
 export const ChartClass = class {
-  constructor(times, prices, width = 2) {
+  constructor(times, prices, color, width = 2) {
     this.data.labels = times;
     this.data.datasets[0].data = prices;
     this.data.datasets[0].borderWidth = width;
+    this.data.datasets[0].borderColor = color;
   }
   data = {
     labels: [],
@@ -29,7 +30,7 @@ export const ChartClass = class {
         pointRadius: 0,
         pointHoverRadius: 0,
         borderWidth: 2,
-        borderColor: "rgb(31, 217, 22)",
+        borderColor: "rgb(31, 217, 22)"
       }
     ],
   }
@@ -101,13 +102,8 @@ export const listOptions = {
       enabled: false,
     }
   }
-}
+};
 
-export const fetchOptions = {
-  method: 'GET',
-  headers: {
-    accept: 'application/json',
-    "APCA-API-KEY-ID": process.env.REACT_APP_APCA_API_KEY_ID,
-    "APCA-API-SECRET-KEY": process.env.REACT_APP_APCA_API_SECRET_KEY,
-  },
+export const defaultAccount = {
+  value: "100000"
 };
