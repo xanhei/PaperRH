@@ -109,8 +109,14 @@ const ltdTimeFormat = (arr, isMinBar) => {
   if(isMinBar) {
     //set i to make sure first bar for 1D is not the 8:00 PM bar for the last day
     let i = (arr[0].t.substring(11,13) == "00") ? 1 : 0;
-    for(; i < arr.length; i++)
+    res.push(formatTime(arr[i++].t));
+    for(; i < arr.length; i++) {
+      if(arr[i].t.substring(0, 10) != arr[i - 1].t.substring(0, 10)) {
+        arr.splice(i);
+        break;
+      }
       res.push(formatTime(arr[i].t));
+    }
 
     //ensure correct formatting of time on last bar's close
     const minutes = (Number(arr[arr.length - 1].t.substring(14, 16)) + 5) % 60;
@@ -141,8 +147,14 @@ const ltdPriceFormat = (arr, isMinBar) => {
   let res = []
   if(isMinBar) {
     let i = (arr[0].t.substring(11, 13) == "00") ? 1 : 0;
-    for(; i < arr.length; i++)
+    res.push(arr[i++].o);
+    for(; i < arr.length; i++) {
+      if(arr[i].t.substring(0, 10) != arr[i - 1].t.substring(0, 10)) {
+        arr.splice(i);
+        break;
+      }
       res.push(Number(arr[i].o));
+    }
 
     //always append the close of the last bar
     res.push(Number(arr[arr.length - 1].c));

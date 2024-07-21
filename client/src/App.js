@@ -49,8 +49,10 @@ function App() {
   const [k, setK] = useState(0);
 
   const doSmth = async () => {
-    const pick = ChartJS.getChart(document.querySelectorAll(".wlChart" && "[stock='AMD']"));
-    changeColor(pick, "green");
+    let temp = [0,1,2,3,4,5,6];
+    console.log(temp);
+    temp.splice(4);
+    console.log(temp);
   }
 
   //unhover listener (couldn't find out how to import correctly)
