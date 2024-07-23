@@ -173,3 +173,4 @@ const ltdPriceFormat = (arr, isMinBar) => {
 
 exports.getData = getData;
 exports.percentChange = percentChange;
+exports.fetchOptions = fetchOptions;

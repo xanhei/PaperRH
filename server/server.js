@@ -47,18 +47,8 @@ app.get("/percent", async (req, res) => {
 
 //minute bars (up to date)
 app.ws("/ws", async (ws, req) => {
-  //let arr = await JSON.parse(req.query.stocks);
-  //console.log(arr);
-  /*res.set({
-    'Content-Type': 'text/event-stream',
-    'Cache-Control': 'no-cache',
-    'Content-Encoding': 'none',
-    'Connection': 'keep-alive'
-  });
-  res.flushHeaders();*/
-
   console.log("Client connected");
-  let arr = [];
+  //let arr = [];
 
   ws.on("message", async (message) => {
     const m = await JSON.parse(message);
@@ -101,8 +91,7 @@ app.ws("/ws", async (ws, req) => {
   AlpacaWS.on("message", async (message) => {
     const m = await JSON.parse(message);
     if(m[0].T === "b") {
-      //res.write(`data: ${JSON.stringify(m[0])}\n\n`);
-      ws.send(m[0]);
+      ws.send(JSON.stringify(m[0]));
       console.log(m[0].S)
     }
     else
@@ -120,36 +109,45 @@ app.ws("/ws", async (ws, req) => {
   //client connection close
   ws.on("close", () => {
     console.log("Client closed WS");
-    /*const unSub = {
-      action: "unsubscribe",
-      bars: arr
-    };
-    AlpacaWS.send(JSON.stringify(unSub));*/
   });
 });
 
-app.get("/abc", (req, res) => {
-  res.set({
-    'Content-Type': 'text/event-stream',
-    'Cache-Control': 'no-cache',
-    'Content-Encoding': 'none',
-    'Connection': 'keep-alive'
-  });
-  res.flushHeaders();
-  
-  const send = () => {
-    const msg = {S: "SPY", c: "540.00"};
-    res.write(`data: ${JSON.stringify(msg)}\n\n`);
+//price checker on buy/sell
+/*app.get("/quotes", async (req, res) => {
+  let avg = [];
+  const subMsg = {
+    action: "subscribe",
+    quotes: req.stock
   }
-
-  console.log("abc connected");
-  const t = setInterval(() => send(), 5000);
-  res.on("close", () => {
-    console.log("Client closed connection");
-    clearInterval(t);
-    res.end();
+  const unSub = {
+    action: "unsubscribe",
+    quotes: req.stock
+  }
+  setTimeout(() => {
+    AlpacaWS.send(JSON.stringify(unSub));
+    res.send(avg);
+  }, 3000);
+  AlpacaWS.send(JSON.stringify(subMsg));
+  AlpacaWS.on("message", async (message) => {
+    const m = await message.json();
+    if(m.T === "q") {
+      console.log("q");
+      avg.push(m.ap);
+      if(avg.length >= 5) {
+        AlpacaWS.send(JSON.stringify(unSub));
+        res.send(avg);
+      }
+    }
   });
 });
+
+//allow client to check if market is open
+app.get("/open", async (req, res) => {
+  const url = "https://paper-api.alpaca.markets/v2/clock";
+  const response = await fetch(url, chartFunc.fetchOptions);
+  const data = await response.json();
+  res.send(data.is_open);
+});*/
 
 // use dynamically set PORT value (or 5000 if PORT is not set)
 const port = process.env.PORT || 5000;

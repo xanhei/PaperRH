@@ -49,10 +49,9 @@ function App() {
   const [k, setK] = useState(0);
 
   const doSmth = async () => {
-    let temp = [0,1,2,3,4,5,6];
-    console.log(temp);
-    temp.splice(4);
-    console.log(temp);
+    const a = await fetch("/open");
+    const b = await a.json();
+    console.log(b);
   }
 
   //unhover listener (couldn't find out how to import correctly)
@@ -168,11 +167,13 @@ function App() {
   const init = () => {
     //subscribe to each => onMessage, change price for that stock in prices map
     ws = new WebSocket(process.env.REACT_APP_WS);//new EventSource(`http://localhost:5000/ws?stocks=${JSON.stringify(arr)}`);
-    ws.onmessage = (event) => {
-      console.log(event.data);
-      if(event.data === "open")
+    ws.onmessage = async (event) => {
+      if(event.data === "open") {
+        console.log(event.data);
         ws.send(JSON.stringify({action: "s", stocks: arr}));
-      //update(event.data);
+      }
+      else
+        update(event.data);
     }
     ws.onerror = () => {
       console.log("Server closed connection");
