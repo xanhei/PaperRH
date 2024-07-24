@@ -49,9 +49,7 @@ function App() {
   const [k, setK] = useState(0);
 
   const doSmth = async () => {
-    const a = await fetch("/open");
-    const b = await a.json();
-    console.log(b);
+    console.log("hi");
   }
 
   //unhover listener (couldn't find out how to import correctly)
@@ -80,7 +78,6 @@ function App() {
     const response = await fetch(`${process.env.REACT_APP_EXPRESS_URL}stocks?stock=${term}&period=${timeframe}&goBack=${goBack}`);
     const [xData, yData] = await response.json();
     if(xData) {
-      //if(!arr.includes(term)) //subscribe to new stock if it isnt already on the list
       const price = prices.map.get(term);
       if(price !== undefined) {
         xData.push(1);
@@ -131,7 +128,8 @@ function App() {
       return;
     setSearchTerm(st);
     setPortView(false);
-    ws.send(JSON.stringify({action: "s", stocks: [st]}));
+    if(!arr.includes(st))
+      ws.send(JSON.stringify({action: "s", stocks: [st]}));
     focusChart(frameState, start, st, false);
   }
 
@@ -179,8 +177,8 @@ function App() {
       console.log("Server closed connection");
       ws.close();
     }
-    ws.onclose = () => {
-      ws.send(JSON.stringify({m: "u", stocks: arr}));
+    window.onbeforeunload = () => {
+      ws.send(JSON.stringify({action: "u", stocks: arr}));
     }
     /*ws.onopen = () => {
       ws.send(JSON.stringify({action: "s", stocks: arr}));

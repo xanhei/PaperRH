@@ -4,9 +4,27 @@ const cors = require('cors');
 const WebSocket = require("ws");
 require("dotenv").config();
 const app = express();
-const wsEndpoint = require("express-ws")(app);
+require("express-ws")(app);
 
-let AlpacaWS = undefined;
+//init
+let AlpacaWS = new WebSocket("wss://stream.data.alpaca.markets/v2/iex");
+AlpacaWS.on("open", () => {
+  const authMsg = {
+    action: "auth",
+    key: process.env.APCA_API_KEY_ID,
+    secret: process.env.APCA_API_SECRET_KEY
+  };
+  AlpacaWS.send(JSON.stringify(authMsg));
+});
+//message handler
+AlpacaWS.on("message", async (message) => {
+  const m = await JSON.parse(message);
+  if(m[0].T === "b")
+    ws.send(JSON.stringify(m[0]));
+  else
+    console.log(m[0]);
+});
+const subs = {};
 
 const corsOps = {
   origin: ["https://paper-rh.vercel.app", "https://paper-rh.vercel.app/stocks"],
@@ -54,62 +72,51 @@ app.ws("/ws", async (ws, req) => {
     const m = await JSON.parse(message);
     console.log(m);
     if(m.action === "s") {
-      const subMsg = {
-        action: "subscribe",
-        bars: m.stocks
-      };
-      AlpacaWS.send(JSON.stringify(subMsg));
+      let subArr = [];
+      for(let i = 0; i < m.stocks.length; i++) {
+        if(subs[m.stocks[i]] === undefined) {
+          subs[m.stocks[i]] = 1;
+          subArr.push(m.stocks[i]);
+        }
+        else
+          subs[m.stocks[i]]++;
+      }
+      if(subArr.length > 0) {
+        const subMsg = {
+          action: "subscribe",
+          bars: subArr
+        };
+        AlpacaWS.send(JSON.stringify(subMsg));
+      }
     }
     else if(m.action === "u") {
-      const unSub = {
-        action: "unsubscribe",
-        bars: m.stocks
-      };
-      AlpacaWS.send(JSON.stringify(unSub));
-    }
-  })
-  
-  //if no clients are connected, create new ws, otherwise, add new clients stocks
-  if(!AlpacaWS) {
-    AlpacaWS = new WebSocket("wss://stream.data.alpaca.markets/v2/iex");
-
-    //authentication process w/ Alpaca
-    AlpacaWS.on("open", () => {
-      const authMsg = {
-        action: "auth",
-        key: process.env.APCA_API_KEY_ID,
-        secret: process.env.APCA_API_SECRET_KEY
-      };
-      AlpacaWS.send(JSON.stringify(authMsg));
-      ws.send("open"); //allows client to send subscription messages without causing errors
-    });
-  }
-  else
-    ws.send("open");
-
-  //message handler
-  AlpacaWS.on("message", async (message) => {
-    const m = await JSON.parse(message);
-    if(m[0].T === "b") {
-      ws.send(JSON.stringify(m[0]));
-      console.log(m[0].S)
-    }
-    else
-      console.log(m[0]);
-
-    //close ws connection when there are no active subscriptions
-    if(m[0].T === "subscription" && !m[0].bars) {
-      if(AlpacaWS)
-        AlpacaWS.close();
-      AlpacaWS = undefined;
-      ws.end();
+      let unSubArr = [];
+      for(let i = 0; i < m.stocks.length; i++) {
+        if(--subs[m.stocks[i]] <= 0) {
+          subs[m.stocks[i]] = undefined;
+          unSubArr.push(m.stocks[i]);
+        }
+      }
+      if(unSubArr.length > 0) {
+        const unSub = {
+          action: "unsubscribe",
+          bars: unSubArr
+        };
+        AlpacaWS.send(JSON.stringify(unSub));
+      }
     }
   });
+  
+
+
 
   //client connection close
   ws.on("close", () => {
     console.log("Client closed WS");
+    ws.close();
   });
+
+  ws.send("open");
 });
 
 //price checker on buy/sell
