@@ -3,6 +3,9 @@
 # api keys
 .env
 
+#unfinished
+src/chartAssets/baseline.js
+
 # dependencies
 /node_modules
 /.pnp

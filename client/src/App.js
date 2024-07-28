@@ -14,7 +14,7 @@ import { verticalHoverLine } from "./chartAssets/verticalLine.js";
 import ctt from "./chartAssets/ctt.js";
 import { focusBtn, commaFormat, percentFormat, chartSubHeader, unSubCheck } from "./auxFunctions/functions.js";
 import { addData, changeColor } from './chartAssets/updateData.js';
-import { baseline } from './chartAssets/baseline.js';
+//import { baseline } from './chartAssets/baseline.js';
 
 import { ChartData, ChartClass, defaultOptions, fetchOptions, defaultAccount } from "./Data.js" // NEED TO SPECIFY ".js" FOR NAMED EXPORT
 
