@@ -49,10 +49,10 @@ const WatchList = (props) => {
   }
 
   const getPercents = async () => {
-    if(!chartList)
-      return;
+    if(!chartList || chartList.length !== props.stocks.length) //second condition is for edge case where stock is added to "stocks" list while user is on the home screen
+      return;                                                  //function does not run if chartData has not been fetched for the added stock
     let bp = [];
-    if(!basePrices) {
+    if(!basePrices || basePrices.length !== props.stocks.length) { //see three lines above (both 2nd conditions are necessary bc chartList and basePrices are independent)
       for(let i = 0; i < props.stocks.length; i++) {
         const response = await fetch(`${process.env.REACT_APP_EXPRESS_URL}percent?stock=${props.stocks[i]}`);
         const res = await response.json();
@@ -61,11 +61,11 @@ const WatchList = (props) => {
       setBasePrices(bp);
     }
     let per = [];
-    const use = basePrices ? basePrices : bp; //not my best work :(
+    const use = bp.length === 0 ? basePrices : bp; //not my best work :(
     for(let i = 0; i < props.stocks.length; i++) {
       let curr = percentFormat(use[i], chartList[i].data.datasets[0].data[chartList[i].data.datasets[0].data.length - 1]);
       const color = curr[0] === "+" ? "rgb(31, 217, 22)" : "rgb(242, 80, 5)";
-      const focusElement = document.querySelector(".percent" && `#${props.stocks[i]}`);
+      const focusElement = document.querySelector(`.percent#${props.stocks[i]}[list='${props.title}']`);
       if(focusElement)
         focusElement.style.color = color;
       changeColor(ChartJS.getChart(document.querySelector(`.wlChart[stock='${props.stocks[i]}']`)), color)
@@ -74,25 +74,26 @@ const WatchList = (props) => {
     setPercents(per);
   }
   
-  useEffect(() => {
-    getList();
-  }, []);
+  useEffect(() => {getList()}, [props.stocks]);
 
-  useEffect(() => {getPercents()}, [chartList])
+  useEffect(() => {getPercents()}, [chartList, props.curr])
   return (
-    <div key={props.stock}>
+    <div>
       <h3 className="listHead">{props.title}</h3>
       <hr className="line"></hr>
       {
         props.stocks.map((stock, index) => 
           <div className="listView" key={index} onClick={() => props.click(stock)}>
-            <h3 className="watchName">{stock}</h3>
+            <div>
+              <h3 className="watchName">{stock}</h3>
+              {props.count ? <h3 style={{fontWeight: "normal", marginTop: "-15%"}}>{props.count[stock]} Share{props.count[stock] !== 1 ? "s" : ""}</h3> : <></>}
+            </div>
             <div className="watchChart">
-              <LineChart name="wlChart" stock={stock} chartData={chartList ? chartList[index].data : ChartData} options={listOptions}></LineChart>
+              <LineChart name="wlChart" stock={stock} chartData={chartList && chartList[index] ? chartList[index].data : ChartData} options={listOptions}></LineChart>
             </div>
             <div className="numberPercent">
-              <p>${chartList ? (Math.ceil(chartList[index].data.datasets[0].data.slice(-1)[0] * 100) / 100).toFixed(2) : "123.45"}</p>
-              <p className="percent" id={stock}>{basePrices && chartList && percents ? percents[index] : "+0.00"}%</p>
+              <p>${props.curr[stock] ? props.curr[stock] : chartList && chartList[index] ? (Math.ceil(chartList[index].data.datasets[0].data.slice(-1)[0] * 100) / 100).toFixed(2) : "123.45"}</p>
+              <p className="percent" id={stock} list={props.title} change={percents}>{basePrices && chartList && percents ? percents[index] : "+0.00"}%</p>
             </div>
           </div>
         )

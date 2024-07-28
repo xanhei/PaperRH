@@ -37,8 +37,13 @@ html {
   border-width: 1px;
   caret-color: white;
   outline: none;
-  text-indent: 10%;
+  text-indent: 9%;
   color: white;
+}
+@media(max-width: 1300px) {
+  .searchBar {
+    text-indent: 30px;
+  }
 }
 
 .searchBar:hover {
@@ -74,6 +79,10 @@ html {
   font-weight: bold;
   margin-top: 0.5%;
   margin-bottom: 0.5%;
+}
+
+.portChart {
+  margin-top: 5%;
 }
 
 .buttonDiv {
@@ -219,7 +228,7 @@ input[type="number"]::-webkit-inner-spin-button {
   height: 8%;
   margin-left: 20%;
   margin-top: 5%;
-  margin-bottom: 5%;
+  margin-bottom: 0%;
 }
 
 .submit:hover {
@@ -241,9 +250,6 @@ input[type="number"]::-webkit-inner-spin-button {
     margin-right: 2%;
     width: 81%;
   }
-  .searchBar {
-    text-indent: 8%;
-  }
   .searchIcon {
     left: 18%;
   }
@@ -258,7 +264,10 @@ input[type="number"]::-webkit-inner-spin-button {
     width: 100%;
   }
   .chartText {
-    margin-left: 5%;
+    margin-left: 2%;
+  }
+  .chartSubHead {
+    margin-left: 2%;
   }
   .buttonDiv {
     justify-content: space-around;
@@ -272,5 +281,8 @@ input[type="number"]::-webkit-inner-spin-button {
     width: 90%;
     margin-right: 0%;
     border-color: transparent;
+  }
+  .submit {
+    height: 50px;
   }
 }

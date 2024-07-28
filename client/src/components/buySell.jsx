@@ -1,7 +1,7 @@
 import "../App.css";
 import { useState, useEffect } from "react";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
-import { focusBtn, commaFormat } from "../auxFunctions/functions";
+import { focusBtn, commaFormat, review } from "../auxFunctions/functions";
 
 const editPhrase = ["Add to", "Remove from"];
 
@@ -11,8 +11,23 @@ const Exchange = (props) => {
   const [placeholder, setPlaceholder] = useState(0); //placeholder amount to be bought/sold
   const [editIndex, setEditIndex] = useState(props.contains ? 1 : 0); //used for changing watchlist (see line 5)
   const [inputVal, setInputVal] = useState(0);
+  const [quotesArr, setQuotesArr] = useState([]);
+  const [openQuery, setOpenQuery] = useState({});
+  
+  const findPrice = async () => {
+    setOpenQuery(true);
+    //console.log("hi");
+    const response = await fetch(`${process.env.REACT_APP_EXPRESS_URL}quotes?stock=${props.stock}`);
+    const res = await response.json();
+    setOpenQuery(false);
+    setQuotesArr(res);
+    if(res.length > 0)
+      return res[Math.floor(res.length / 2)];
+    return [];
+  }
 
   useEffect(() => setEditIndex(props.contains ? 1 : 0), [props.contains]); //ensures editPhrase is correct when new stock is searched from individual stock view
+  useEffect(() => {findPrice()}, []);
   return (
     <>
       <div className="buySell">
@@ -42,16 +57,34 @@ const Exchange = (props) => {
         </div>
         <div className="exchangeSection">
           <p>Market Price</p>
-          <p className="exchangeNum">${props.marketPrice}</p>
+          <p className="exchangeNum">${quotesArr.length > 0 ? commaFormat(quotesArr[Math.floor(quotesArr.length / 2)]) : props.marketPrice}</p>
         </div>
         <div className="exchangeSection">
           <p>Estimated Cost</p>
-          <p className="exchangeNum">${commaFormat(sd == "Shares" ? (props.marketPrice * inputVal) : inputVal)}</p>
+          <p className="exchangeNum">${commaFormat(sd === "Shares" ? (quotesArr.length > 0 ?
+                                       quotesArr[Math.floor(quotesArr.length / 2)] : props.marketPrice.replaceAll(',', '') * inputVal) : inputVal)}</p>
         </div>
         <p className="disclaimer">**Price may differ when order is submitted**</p>
       </div>
       <hr className="line"></hr>
-      <button className="submit">Review Order</button>
+      <button className="submit" onClick={async () => {
+        let amount = Number(document.querySelector(".exAmount").value);
+        const dollars = sd === "Dollars";
+        const type = ex === "Buy";
+        const buyPower = props.bp;
+        const numOwned = props.stake;
+        const stock = props.stock;
+        let mult = await findPrice();
+        if(mult.length == 0)
+          mult = Number(props.marketPrice); //REMOVE LATER
+        amount /= (sd === "Dollars" ? mult : 1);
+        if(review(amount, mult, type, dollars, buyPower, numOwned))
+          props.action(amount, mult, type, stock);
+      }}>Review Order</button>
+      <div className="exchangeSection">
+        <p>Buying Power</p>
+        <p className="exchangeNum">${commaFormat(props.bp)}</p>
+      </div>
       <hr className="line"></hr>
       <button className="submit" onClick={() => {
         const changed = props.wlChange(); //true if stock was added/removed, false otherwise (user already subscribed to max number of stocks)

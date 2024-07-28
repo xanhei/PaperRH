@@ -39,16 +39,39 @@ export const percentFormat = (base, curr) => {
 
 //
 export const chartSubHeader = (base, curr) => {
+  curr = curr.replaceAll(',', '');
   curr = Number(curr);
   let price = (curr - base).toFixed(2);
   const percent = percentFormat(base, curr);
   if(document.querySelector(".chartSubHead"))
     document.querySelector(".chartSubHead").style.color = price >= 0 ? "rgb(31, 217, 22)" : "rgb(242, 80, 5)";
-  return `${price >= 0 ? `+$${price}` : `-$${(-price).toFixed(2)}`} (${percent}%)`;
+  return `${price >= 0 ? `+$${commaFormat(price)}` : `-$${(-price).toFixed(2)}`} (${commaFormat(percent)}%)`;
 }
 
 //remove subscription from stock that are no longer being watched
 export const unSubCheck = (arr, term, ws) => {
   if(!arr.includes(term))
     ws.send(JSON.stringify({action: "u", stocks: [term]}));
+}
+
+export const review = (amount, mult, buy, dollars, bp, stake) => {
+  if(buy) {
+    if(amount > 0) {
+      if(amount * mult <= bp) {
+        return true; //return [dollarvalue, shares]
+      }
+      else {
+        alert(`Not enough cash to buy`);
+        return false; //return 0;
+      }
+    }
+  }
+  else {
+    if(amount <= stake)
+      return true; //return [dollarvalue, shares]
+    else {
+      alert("Not enough owned to sell");
+      return false; //return 0;
+    }
+  }
 }

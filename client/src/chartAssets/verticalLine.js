@@ -16,7 +16,7 @@ export const verticalHoverLine = {
       ctx.lineWidth = 2;
       ctx.strokeStyle = "#8c8c8c";
       ctx.stroke();
-      ctx.restore();
+      //ctx.restore();
     }
   }
 }

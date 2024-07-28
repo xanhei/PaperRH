@@ -16,15 +16,9 @@ AlpacaWS.on("open", () => {
   };
   AlpacaWS.send(JSON.stringify(authMsg));
 });
-//message handler
-AlpacaWS.on("message", async (message) => {
-  const m = await JSON.parse(message);
-  if(m[0].T === "b")
-    ws.send(JSON.stringify(m[0]));
-  else
-    console.log(m[0]);
-});
+//AlpacaWS.on("message", async)
 const subs = {};
+const openQueries = new Set();
 
 const corsOps = {
   origin: ["https://paper-rh.vercel.app", "https://paper-rh.vercel.app/stocks"],
@@ -65,6 +59,16 @@ app.get("/percent", async (req, res) => {
 
 //minute bars (up to date)
 app.ws("/ws", async (ws, req) => {
+  //message handler
+  const mListener = async (message) => {
+    const m = await JSON.parse(message);
+    if(m[0].T === "b")
+        ws.send(JSON.stringify(m[0]));
+    else if(m[0].T !== "t")
+      console.log(m[0]);
+  }
+  AlpacaWS.on("message", mListener);
+
   console.log("Client connected");
   //let arr = [];
 
@@ -106,13 +110,11 @@ app.ws("/ws", async (ws, req) => {
       }
     }
   });
-  
-
-
 
   //client connection close
   ws.on("close", () => {
     console.log("Client closed WS");
+    AlpacaWS.removeListener("message", mListener);
     ws.close();
   });
 
@@ -120,32 +122,62 @@ app.ws("/ws", async (ws, req) => {
 });
 
 //price checker on buy/sell
-/*app.get("/quotes", async (req, res) => {
-  let avg = [];
-  const subMsg = {
-    action: "subscribe",
-    quotes: req.stock
-  }
-  const unSub = {
-    action: "unsubscribe",
-    quotes: req.stock
-  }
-  setTimeout(() => {
-    AlpacaWS.send(JSON.stringify(unSub));
-    res.send(avg);
-  }, 3000);
-  AlpacaWS.send(JSON.stringify(subMsg));
-  AlpacaWS.on("message", async (message) => {
-    const m = await message.json();
-    if(m.T === "q") {
-      console.log("q");
-      avg.push(m.ap);
-      if(avg.length >= 5) {
-        AlpacaWS.send(JSON.stringify(unSub));
-        res.send(avg);
+app.get("/quotes", async (req, res) => {
+  //check if market is open before proceeding
+  const url = "https://paper-api.alpaca.markets/v2/clock";
+  const response = await fetch(url, chartFunc.fetchOptions);
+  const data = await response.json();
+  if(!data.is_open)
+    setTimeout(() => {res.send([])}, 3000);
+  else {
+    //sub/unsub functions
+    const checkSub = () => {
+      const subMsg = {
+        action: "subscribe",
+        trades: [req.query.stock]
+      }
+      AlpacaWS.send(JSON.stringify(subMsg));
+      openQueries.add(req.query.stock);
+    }
+    const remSub = () => {
+      const unSub = {
+        action: "unsubscribe",
+        trades: [req.query.stock]
+      }
+      AlpacaWS.send(JSON.stringify(unSub));
+      openQueries.delete[req.query.stock];
+    }
+
+    let med = [];
+    if(!openQueries.has(req.query.stock))
+      checkSub();
+    const forceClose = setInterval(() => {
+      if(med.length > 0) {
+        clearInterval(forceClose);
+        if(openQueries.has(req.query.stock))
+          remSub();
+        AlpacaWS.removeListener("message", qListener);
+        res.send(med);
+      }
+      else if(!openQueries.has(req.query.stock))
+        checkSub();
+    }, 3000);
+
+    const qListener = async (message) => {
+      const m = await JSON.parse(message);
+      if(m[0].T === "t" && m[0].S === req.query.stock) {
+        med.push(m[0].p);
+        if(med.length >= 5) {
+          clearInterval(forceClose);
+          if(openQueries.has(req.query.stock))
+            remSub();
+          AlpacaWS.removeListener("message", qListener);
+          res.send(med);
+        }
       }
     }
-  });
+    AlpacaWS.on("message", qListener);
+  }
 });
 
 //allow client to check if market is open
@@ -154,7 +186,7 @@ app.get("/open", async (req, res) => {
   const response = await fetch(url, chartFunc.fetchOptions);
   const data = await response.json();
   res.send(data.is_open);
-});*/
+});
 
 // use dynamically set PORT value (or 5000 if PORT is not set)
 const port = process.env.PORT || 5000;
