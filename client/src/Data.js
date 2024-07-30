@@ -105,5 +105,10 @@ export const listOptions = {
 };
 
 export const defaultAccount = {
-  value: "100000"
+  userID: "",
+  accountValue: 100000,
+  buyingPower: 100000,
+  wl: ["SPY","AMD","AAPL"],
+  owned: {},
+  subs: ["SPY","AMD","AAPL"]
 };

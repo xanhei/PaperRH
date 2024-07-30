@@ -16,7 +16,6 @@ const Exchange = (props) => {
   
   const findPrice = async () => {
     setOpenQuery(true);
-    //console.log("hi");
     const response = await fetch(`${process.env.REACT_APP_EXPRESS_URL}quotes?stock=${props.stock}`);
     const res = await response.json();
     setOpenQuery(false);
@@ -26,7 +25,7 @@ const Exchange = (props) => {
     return [];
   }
 
-  useEffect(() => setEditIndex(props.contains ? 1 : 0), [props.contains]); //ensures editPhrase is correct when new stock is searched from individual stock view
+  useEffect(() => setEditIndex(props.contains ? 1 : 0), [props.stock]); //ensures editPhrase is correct when new stock is searched from individual stock view
   useEffect(() => {findPrice()}, []);
   return (
     <>

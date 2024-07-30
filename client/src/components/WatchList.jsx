@@ -7,6 +7,7 @@ import LineChart from "./LineChart";
 import { listOptions, ChartData, ChartClass } from "../Data";
 import { percentFormat } from "../auxFunctions/functions.js";
 import { changeColor } from "../chartAssets/updateData.js";
+import { commaFormat } from "../auxFunctions/functions.js";
 
 //let basePrices;
 
@@ -86,7 +87,8 @@ const WatchList = (props) => {
           <div className="listView" key={index} onClick={() => props.click(stock)}>
             <div>
               <h3 className="watchName">{stock}</h3>
-              {props.count ? <h3 style={{fontWeight: "normal", marginTop: "-15%"}}>{props.count[stock]} Share{props.count[stock] !== 1 ? "s" : ""}</h3> : <></>}
+              {props.count ? <h3 style={{fontWeight: "normal", marginTop: "-15%"}}>
+                {props.count[stock] % 1 ? commaFormat(props.count[stock]) : props.count[stock]} Share{props.count[stock] !== 1 ? "s" : ""}</h3> : <></>}
             </div>
             <div className="watchChart">
               <LineChart name="wlChart" stock={stock} chartData={chartList && chartList[index] ? chartList[index].data : ChartData} options={listOptions}></LineChart>
