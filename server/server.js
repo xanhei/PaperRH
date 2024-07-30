@@ -7,6 +7,12 @@ const {MongoClient, ServerApiVersion} = require("mongodb");
 const app = express();
 require("express-ws")(app);
 
+const corsOps = {
+  origin: ["https://paper-rh.vercel.app", "https://paper-rh.vercel.app/stocks"],
+  optionsSuccessStatus: 200
+};
+app.use(cors());
+
 //initialize db connection
 const client = new MongoClient(process.env.URI, {serverApi: {version: ServerApiVersion.v1, strict: true, deprecationErrors: true}});
 let db, collection;
@@ -37,12 +43,6 @@ AlpacaWS.on("open", () => {
 //AlpacaWS.on("message", async)
 const subs = {};
 const openQueries = new Set();
-
-const corsOps = {
-  origin: ["https://paper-rh.vercel.app", "https://paper-rh.vercel.app/stocks"],
-  optionsSuccessStatus: 200
-};
-app.use(cors());
 
 //app.use(express.json()); //allows app.post route handler to parse json
 
