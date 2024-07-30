@@ -3,7 +3,6 @@ const chartFunc = require("./auxFunctions/api.js");
 const cors = require('cors');
 const WebSocket = require("ws");
 require("dotenv").config();
-const {MongoClient, ServerApiVersion} = require("mongodb");
 const app = express();
 require("express-ws")(app);
 
@@ -14,6 +13,7 @@ const corsOps = {
 app.use(cors());
 
 //initialize db connection
+const {MongoClient, ServerApiVersion} = require("mongodb");
 const client = new MongoClient(process.env.URI, {serverApi: {version: ServerApiVersion.v1, strict: true, deprecationErrors: true}});
 let db, collection;
 const connect = async() => {
