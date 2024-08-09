@@ -7,15 +7,11 @@ const app = express();
 require("express-ws")(app);
 
 const corsOps = {
-  origin: ["https://paper-rh.vercel.app", "https://paper-rh.vercel.app/stocks"],
-  optionsSuccessStatus: 200
+  origin:'*', 
+  credentials:true,
+  optionSuccessStatus:200,
 };
-app.use(cors());
-app.use(function (req, res, next) {
-  res.header("Access-Control-Allow-Origin", "*");
-  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-  next();
-});
+app.use(cors(corsOps));
 
 //initialize db connection
 const {MongoClient, ServerApiVersion} = require("mongodb");
