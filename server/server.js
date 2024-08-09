@@ -10,7 +10,7 @@ const corsOps = {
   origin: ["https://paper-rh.vercel.app", "https://paper-rh.vercel.app/stocks"],
   optionsSuccessStatus: 200
 };
-app.use(cors(corsOps));
+app.use(cors());
 
 //initialize db connection
 const {MongoClient, ServerApiVersion} = require("mongodb");
