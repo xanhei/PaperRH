@@ -10,7 +10,7 @@ const corsOps = {
   origin: ["https://paper-rh.vercel.app", "https://paper-rh.vercel.app/stocks"],
   optionsSuccessStatus: 200
 };
-app.use(cors({credentials: true}));
+app.use(cors(corsOps));
 
 //initialize db connection
 const {MongoClient, ServerApiVersion} = require("mongodb");
@@ -236,7 +236,7 @@ app.get("/users", async (req, res) => {
     res.send({m: "Invalid"});
 });
 
-app.put("/watchlist", async (req, res) => {
+app.get("/watchlist", async (req, res) => {
   const account = await collection.findOne({userID: req.query.user}, {projection: {_id: 0}});
   if(account) {
     const changeData = await JSON.parse(req.query.change);
@@ -267,7 +267,7 @@ app.put("/watchlist", async (req, res) => {
     res.send({data: "Account not found"});
 });
 
-app.put("/owned", async (req, res) => {
+app.get("/owned", async (req, res) => {
   const account = await collection.findOne({userID: req.query.user}, {projection: {_id: 0}});
   if(account) {
     const changeData = await JSON.parse(req.query.change);
@@ -302,7 +302,7 @@ app.put("/owned", async (req, res) => {
     res.send({data: "Account not found"});
 });
 
-app.put("/updatePortChart", async (req, res) => {
+app.get("/updatePortChart", async (req, res) => {
   const account = await collection.findOne({userID: req.query.user}, {projection: {_id: 0}});
   if(account) {
     const charts = account.charts;
@@ -318,13 +318,13 @@ app.put("/updatePortChart", async (req, res) => {
     res.send({data: "Account not found"});
 });
 
-app.put("/updateLogin", async (req, res) => {
+app.get("/updateLogin", async (req, res) => {
   const updates = {$set: {lastLogin: req.query.date}};
   const result = await collection.updateOne({userID: req.query.user}, updates);
   res.send({data: result});
 });
 
-app.put("/accountInit", async (req, res) => {
+app.get("/accountInit", async (req, res) => {
   const account = collection.findOne({userID: "test"}, {projection: {_id: 0}});
   const charts = account.charts;
   const params = [

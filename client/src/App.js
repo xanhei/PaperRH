@@ -175,11 +175,10 @@ function App() {
   }
 
   const updatePort = (shares, price, buy, stock) => {
-    const options = {method: "PUT", header: {"content-type": "application/json"}};
     if(buy) {
       const bp = Number((Number(buyPower) - shares * price).toFixed(2));
       setBuyPower(bp);
-      fetch(`${process.env.REACT_APP_EXPRESS_URL}owned?user=test&action=add&change=${JSON.stringify([[stock, shares]])}&bp=${JSON.stringify(bp)}`, options);
+      fetch(`${process.env.REACT_APP_EXPRESS_URL}owned?user=test&action=add&change=${JSON.stringify([[stock, shares]])}&bp=${JSON.stringify(bp)}`);
       if(owned[stock] === undefined) {
         owned[stock] = shares;
         if(!subs.includes(stock)) { //add to subs if stock is not currently on watchlist
@@ -330,14 +329,13 @@ function App() {
               chartData !== undefined ?
               <Exchange className="Exchange" stock={searchTerm} marketPrice={currPrice} contains={arr.includes(searchTerm)} stake={owned[searchTerm] || 0} bp={buyPower}
                         action={(shares, price, buy, stock) => updatePort(shares, price, buy, stock)} wlChange={() => {
-                const options = {method: "PUT", header: {"content-type": "application/json"}};
                 //remove if wl contains stock
                 if(arr.includes(searchTerm)) {
                   arr.splice(arr.indexOf(searchTerm), 1);
                   if(owned[searchTerm] === undefined) //remove from permanent subs if user does not own stock
                     subs.splice(subs.indexOf(searchTerm), 1);
                   //remove from database
-                  fetch(`${process.env.REACT_APP_EXPRESS_URL}watchlist?user=test&action=remove&change=${JSON.stringify([searchTerm])}`, options);
+                  fetch(`${process.env.REACT_APP_EXPRESS_URL}watchlist?user=test&action=remove&change=${JSON.stringify([searchTerm])}`);
                 }
                 //add if wl does not contain stock
                 else {
@@ -346,7 +344,7 @@ function App() {
                     if(owned[searchTerm] === undefined) //add to permanent subs if user does not own stock
                       subs.push(searchTerm);
                     //add to database
-                    fetch(`${process.env.REACT_APP_EXPRESS_URL}watchlist?user=test&action=add&change=${JSON.stringify([searchTerm])}`, options);
+                    fetch(`${process.env.REACT_APP_EXPRESS_URL}watchlist?user=test&action=add&change=${JSON.stringify([searchTerm])}`);
                   }
                   else {
                     alert("Max Watchlist size is 25");
