@@ -236,9 +236,7 @@ app.get("/users", async (req, res) => {
     res.send({m: "Invalid"});
 });
 
-//change user's saved watchlist
-app.options("/watchlist", cors()); //enable pre-flight request for put request
-app.put("/watchlist", cors(), async (req, res) => {
+app.put("/watchlist", async (req, res) => {
   const account = await collection.findOne({userID: req.query.user}, {projection: {_id: 0}});
   if(account) {
     const changeData = await JSON.parse(req.query.change);
@@ -269,8 +267,6 @@ app.put("/watchlist", cors(), async (req, res) => {
     res.send({data: "Account not found"});
 });
 
-//update user's owned stocks
-app.options("/owned", cors());
 app.put("/owned", async (req, res) => {
   const account = await collection.findOne({userID: req.query.user}, {projection: {_id: 0}});
   if(account) {
@@ -306,8 +302,7 @@ app.put("/owned", async (req, res) => {
     res.send({data: "Account not found"});
 });
 
-app.options("/updatePortChart", cors());
-app.put("/updatePortChart", cors(), async (req, res) => {
+app.put("/updatePortChart", async (req, res) => {
   const account = await collection.findOne({userID: req.query.user}, {projection: {_id: 0}});
   if(account) {
     const charts = account.charts;
@@ -323,15 +318,13 @@ app.put("/updatePortChart", cors(), async (req, res) => {
     res.send({data: "Account not found"});
 });
 
-app.options("/updateLogin", cors());
-app.put("/updateLogin", cors(), async (req, res) => {
+app.put("/updateLogin", async (req, res) => {
   const updates = {$set: {lastLogin: req.query.date}};
   const result = await collection.updateOne({userID: req.query.user}, updates);
   res.send({data: result});
 });
 
-app.options("/accountInit", cors());
-app.put("/accountInit", cors(), async (req, res) => {
+app.put("/accountInit", async (req, res) => {
   const account = collection.findOne({userID: "test"}, {projection: {_id: 0}});
   const charts = account.charts;
   const params = [
