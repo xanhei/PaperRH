@@ -26,7 +26,7 @@ const Exchange = (props) => {
   }
 
   useEffect(() => setEditIndex(props.contains ? 1 : 0), [props.stock]); //ensures editPhrase is correct when new stock is searched from individual stock view
-  useEffect(() => {findPrice()}, []);
+  useEffect(() => {findPrice()}, [props.stock]);
   return (
     <>
       <div className="buySell">

@@ -20,11 +20,9 @@ const connect = async() => {
   try {
     await client.connect();
     //send a ping to confirm successful connection
-    db = await client.db("paperdb")//.command({ping: 1});
+    db = await client.db("paperdb")
     collection = await db.collection("userCollection");
-    //const res = await collection.findOne({userID: ""}, {projection: {_id:0}});
     console.log("Connected to DB");
-    //console.log(res);
   } catch(error) {
     console.log(error);
   }
@@ -40,7 +38,10 @@ AlpacaWS.on("open", () => {
   };
   AlpacaWS.send(JSON.stringify(authMsg));
 });
-//AlpacaWS.on("message", async)
+AlpacaWS.on("message", async (message) => {
+  const m = await JSON.parse(message);
+  console.log(m);
+});
 const subs = {};
 const openQueries = new Set();
 
@@ -96,7 +97,7 @@ app.ws("/ws", async (ws, req) => {
     if(m.action === "s") {
       let subArr = [];
       for(let i = 0; i < m.stocks.length; i++) {
-        if(subs[m.stocks[i]] === undefined) {
+        if(!subs[m.stocks[i]]) {
           subs[m.stocks[i]] = 1;
           subArr.push(m.stocks[i]);
         }
@@ -115,7 +116,7 @@ app.ws("/ws", async (ws, req) => {
       let unSubArr = [];
       for(let i = 0; i < m.stocks.length; i++) {
         if(--subs[m.stocks[i]] <= 0) {
-          subs[m.stocks[i]] = undefined;
+          delete subs[m.stocks[i]];
           unSubArr.push(m.stocks[i]);
         }
       }
@@ -142,60 +143,64 @@ app.ws("/ws", async (ws, req) => {
 //price checker on buy/sell
 app.get("/quotes", async (req, res) => {
   //check if market is open before proceeding
-  const url = "https://paper-api.alpaca.markets/v2/clock";
-  const response = await fetch(url, chartFunc.fetchOptions);
-  const data = await response.json();
-  if(!data.is_open)
-    setTimeout(() => {res.send([])}, 3000);
+  if(req.query.stock === "Portfolio") //error check
+    res.send({data: "Bad Term"});
   else {
-    //sub/unsub functions
-    const checkSub = () => {
-      const subMsg = {
-        action: "subscribe",
-        trades: [req.query.stock]
+    const url = "https://paper-api.alpaca.markets/v2/clock";
+    const response = await fetch(url, chartFunc.fetchOptions);
+    const data = await response.json();
+    if(!data.is_open)
+      setTimeout(() => {res.send([])}, 3000);
+    else {
+      //sub/unsub functions
+      const checkSub = () => {
+        const subMsg = {
+          action: "subscribe",
+          trades: [req.query.stock]
+        }
+        AlpacaWS.send(JSON.stringify(subMsg));
+        openQueries.add(req.query.stock);
       }
-      AlpacaWS.send(JSON.stringify(subMsg));
-      openQueries.add(req.query.stock);
-    }
-    const remSub = () => {
-      openQueries.delete(req.query.stock);
-      const unSub = {
-        action: "unsubscribe",
-        trades: [req.query.stock]
+      const remSub = () => {
+        openQueries.delete(req.query.stock);
+        const unSub = {
+          action: "unsubscribe",
+          trades: [req.query.stock]
+        }
+        AlpacaWS.send(JSON.stringify(unSub));
       }
-      AlpacaWS.send(JSON.stringify(unSub));
-    }
 
-    let med = [];
-    console.log(openQueries);
-    if(!openQueries.has(req.query.stock))
-      checkSub();
-    const forceClose = setInterval(() => {
-      if(med.length > 0) {
-        clearInterval(forceClose);
-        if(openQueries.has(req.query.stock))
-          remSub();
-        AlpacaWS.removeListener("message", qListener);
-        res.send(med);
-      }
-      else if(!openQueries.has(req.query.stock))
+      let med = [];
+      console.log(openQueries);
+      if(!openQueries.has(req.query.stock))
         checkSub();
-    }, 3000);
-
-    const qListener = async (message) => {
-      const m = await JSON.parse(message);
-      if(m[0].T === "t" && m[0].S === req.query.stock) {
-        med.push(m[0].p);
-        if(med.length >= 5) {
+      const forceClose = setInterval(() => {
+        if(med.length > 0) {
           clearInterval(forceClose);
           if(openQueries.has(req.query.stock))
             remSub();
           AlpacaWS.removeListener("message", qListener);
           res.send(med);
         }
+        else if(!openQueries.has(req.query.stock))
+          checkSub();
+      }, 3000);
+
+      const qListener = async (message) => {
+        const m = await JSON.parse(message);
+        if(m[0].T === "t" && m[0].S === req.query.stock) {
+          med.push(m[0].p);
+          if(med.length >= 5) {
+            clearInterval(forceClose);
+            if(openQueries.has(req.query.stock))
+              remSub();
+            AlpacaWS.removeListener("message", qListener);
+            res.send(med);
+          }
+        }
       }
+      AlpacaWS.on("message", qListener);
     }
-    AlpacaWS.on("message", qListener);
   }
 });
 
@@ -205,6 +210,13 @@ app.get("/open", async (req, res) => {
   const response = await fetch(url, chartFunc.fetchOptions);
   const data = await response.json();
   res.send(data.is_open);
+});
+
+app.get("/prevOpen", async (req, res) => {
+  const end = new Date();
+  const start = new Date(end.getFullYear(), end.getMonth(), end.getDate() - 7);
+  const response = await chartFunc.findOpen(`${start.getFullYear()}-${start.getMonth() + 1}-${start.getDate()}`, `${end.getFullYear()}-${end.getMonth() + 1}-${end.getDate()}`);
+  res.send({date: response});
 });
 
 //handle CRUD for users database
@@ -224,7 +236,9 @@ app.get("/users", async (req, res) => {
     res.send({m: "Invalid"});
 });
 
-app.put("/watchlist", async (req, res) => {
+//change user's saved watchlist
+app.options("/watchlist", cors()); //enable pre-flight request for put request
+app.put("/watchlist", cors(), async (req, res) => {
   const account = await collection.findOne({userID: req.query.user}, {projection: {_id: 0}});
   if(account) {
     const changeData = await JSON.parse(req.query.change);
@@ -255,7 +269,99 @@ app.put("/watchlist", async (req, res) => {
     res.send({data: "Account not found"});
 });
 
-app.patch("/snapshot", async (req, res) => {});
+//update user's owned stocks
+app.options("/owned", cors());
+app.put("/owned", async (req, res) => {
+  const account = await collection.findOne({userID: req.query.user}, {projection: {_id: 0}});
+  if(account) {
+    const changeData = await JSON.parse(req.query.change);
+    const owned = account.owned;
+    const subs = account.subs;
+    if(req.query.action === "add") {
+      for(let i = 0; i < changeData.length; i++) {
+        if(!owned[changeData[i][0]])
+          owned[changeData[i][0]] = changeData[i][1];
+        else
+          owned[changeData[i][0]] += changeData[i][1];
+        if(!subs.includes(changeData[i][0]))
+          subs.push(changeData[i][0]);
+      }
+    }
+    else {
+      const wl = account.wl;
+      for(let i = 0; i < changeData.length; i++) {
+        owned[changeData[i][0]] -= changeData[i][1];
+        if(owned[changeData[i][0]] <= 0)
+          delete owned[changeData[i][0]];
+        if(!wl.includes(changeData[i][0]))
+          subs.splice(subs.indexOf(changeData[i][0]), 1);
+      }
+    }
+    const bp = await JSON.parse(req.query.bp);
+    const updates = {$set: {owned: owned, subs: subs, buyingPower: bp}};
+    const result = await collection.updateOne({userID: req.query.user}, updates);
+    res.send({data: result});
+  }
+  else
+    res.send({data: "Account not found"});
+});
+
+app.options("/updatePortChart", cors());
+app.put("/updatePortChart", cors(), async (req, res) => {
+  const account = await collection.findOne({userID: req.query.user}, {projection: {_id: 0}});
+  if(account) {
+    const charts = account.charts;
+    const xData = await JSON.parse(req.query.xData), yData = await JSON.parse(req.query.yData);
+    charts[req.query.chart] = [xData, yData];
+    const updates = {$set: {charts: charts}};
+    if(req.query.chart === "day")
+      updates["$set"]["accountValue"] = yData.slice(-1)[0];
+    const result = await collection.updateOne({userID: req.query.user}, updates);
+    res.send({data: result});
+  }
+  else
+    res.send({data: "Account not found"});
+});
+
+app.options("/updateLogin", cors());
+app.put("/updateLogin", cors(), async (req, res) => {
+  const updates = {$set: {lastLogin: req.query.date}};
+  const result = await collection.updateOne({userID: req.query.user}, updates);
+  res.send({data: result});
+});
+
+app.options("/accountInit", cors());
+app.put("/accountInit", cors(), async (req, res) => {
+  const account = collection.findOne({userID: "test"}, {projection: {_id: 0}});
+  const charts = account.charts;
+  const params = [
+    ["5Min", 0, "day"],
+    ["1Hour", 7, "week"],
+    ["1Day", 1, "month"],
+    ["1Day", 3, "month3"],
+    ["1Day", 6, "month6"],
+    ["1Day", 12, "year"],
+  ];
+  for(const p of params) {
+    const data = await chartFunc.getData(p[0], p[1], "NVDA");
+    for(const i in res[0])
+      data[1] = account.accountValue;
+    charts[p[2]] = data;
+  }
+  const updates = {$set: {charts: charts}};
+  const result = await collection.updateOne({userID: "test"}, updates);
+  res.send(result)
+});
+
+app.get("/temp", async (req, res) => {
+  /*const updates = {$set: {lastLogin: "", charts: {day:[[],[]],week:[[],[]],month:[[],[]],month3:[[],[]],month6:[[],[]],year:[[],[]]}}};
+  //const updates = {$set: {buyingPower: 100000}};buyingPower: 100000, accountValue: 100000, owned: {}, 
+  const result = await collection.updateOne({userID: "test"}, updates);
+  res.send({data: result});*/
+  const a = await collection.find({}, {projection: {_id: 0}}).toArray();
+  console.log(a);
+  res.send({data: 0});
+});
 
 // use dynamically set PORT value (or 5000 if PORT is not set)
 const port = process.env.PORT || 5000;

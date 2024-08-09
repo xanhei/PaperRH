@@ -71,9 +71,8 @@ const findOpen = async (startDate, endDate, percent = false) => {
 }
 
 //formats time to display on chart tooltip
-const formatTime = (s, timeframe) => {
+const formatTime = (s, timeframe) => { //s --> 2024-01-01T00:00:00Z
   if(timeframe === "1Day") {
-    //const date = new Date(s).toDateString();
     let i = (Number(s.substring(5, 7)) < 10) ? 6 : 5;
     let j = (Number(s.substring(8, 10)) < 10) ? 9 : 8;
     return `${s.substring(i, 7)}-${s.substring(j, 10)}-${s.substring(0, 4)}`;
@@ -92,14 +91,14 @@ const formatTime = (s, timeframe) => {
       half = timeString.substring(9, 11);
     }
 
-    //formmat date
+    //format date
     let prefix = "";
     if(timeframe === "1Hour") {
       let i = (Number(s.substring(5, 7)) < 10) ? 6 : 5;
       let j = (Number(s.substring(8, 10)) < 10) ? 9 : 8;
-      prefix = `${s.substring(i, 7)}-${s.substring(j, 10)},`;
+      prefix = `${s.substring(i, 7)}-${s.substring(j, 10)}, `;
     }
-    return `${prefix} ${time} ${half}`;
+    return `${prefix}${time} ${half}`;
   }
 }
 
@@ -173,4 +172,5 @@ const ltdPriceFormat = (arr, isMinBar) => {
 
 exports.getData = getData;
 exports.percentChange = percentChange;
+exports.findOpen = findOpen;
 exports.fetchOptions = fetchOptions;

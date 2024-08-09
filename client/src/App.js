@@ -12,7 +12,7 @@ import WatchList from "./components/WatchList.jsx";
 import Exchange from './components/buySell.jsx';
 import { verticalHoverLine } from "./chartAssets/verticalLine.js";
 import ctt from "./chartAssets/ctt.js";
-import { focusBtn, commaFormat, percentFormat, chartSubHeader, unSubCheck } from "./auxFunctions/functions.js";
+import { focusBtn, commaFormat, percentFormat, chartSubHeader, unSubCheck, getPortData, loginUpdate } from "./auxFunctions/functions.js";
 import { addData, changeColor } from './chartAssets/updateData.js';
 //import { baseline } from './chartAssets/baseline.js';
 
@@ -29,6 +29,8 @@ const defaultSearch = "SPY";
 let arr = []; //watchlist
 let subs = []; //subs list
 let owned = {}; //stocks list
+let tempSub = ""; //used to correctly unsub from a stock when user unloads while on individual stock screen that is not in subs list
+let account;
 
 //const doSmth = async () => {
   /*const es = new EventSource(`http://localhost:5000/ws?stocks=${JSON.stringify(arr)}`);
@@ -49,7 +51,8 @@ function App() {
   const [options, setOptions] = useState(defaultOptions); //options used for main chart
   const [basePrice, setBasePrice] = useState(); //used for price change calculation
   const [loggedIn, setLoggedIn] = useState(false);
-  const [bp, setBP] = useState(100000);
+  const [buyPower, setBuyPower] = useState(100000);
+  const [av, setAV] = useState();
 
   const doSmth = async () => {
     /*const message = await fetch("/quotes?stock=SBUX");
@@ -60,10 +63,20 @@ function App() {
     else
       console.log(m);*/
     //baseline(ChartJS.getChart(document.querySelector(".portChart")), 560);
-    const arr = ["SPY","AMD","AAPL"];
-    console.log(arr);
-    arr.splice(arr.indexOf("SPY"), 1);
-    console.log(arr);
+    /*const compTime = await fetch(`${process.env.REACT_APP_EXPRESS_URL}stocks?stock=NVDA&period=1Day&goBack=6`);
+    const [compX, compY] = await compTime.json();
+    console.log(compX, compX[0].length);*/
+   
+    /*const result = await getPortData("5Min", 0, account);
+    console.log(result);
+    console.log(account);*/
+    const result = await fetch("/temp");
+    const res = await result.json();
+    console.log(res.data);
+    //console.log(ChartJS.getChart(document.querySelector(".portChart")).data.datasets[0].data);
+    /*const result = await getPortData("5Min", 0, account);
+    console.log(result);
+    console.log(account);*/
   }
 
   //unhover listener (couldn't find out how to import correctly)
@@ -75,7 +88,7 @@ function App() {
         setShowPrice(undefined);
     }
   }
-  
+ 
   //creating chartref for onHover event
   let ops = defaultOptions;
   ops.onHover = (e, arr) => {
@@ -85,22 +98,22 @@ function App() {
 
   //function for setting chart data parameters
   const focusChart = async (timeframe, goBack, term, pv = portView) => {
-    if(loggedIn && pv) {
+    tempSub = term;
+    let xData, yData;
+    /*if(pv && account) {
+      console.log("getPortData");
+      [xData, yData] = await getPortData(timeframe, goBack, account);
       setSearchTerm("Portfolio");
-      term = "SPY";
     }
-    const response = await fetch(`${process.env.REACT_APP_EXPRESS_URL}stocks?stock=${term}&period=${timeframe}&goBack=${goBack}`);
-    const [xData, yData] = await response.json();
-    if(xData) {
+    else {*/
+      const response = await fetch(`${process.env.REACT_APP_EXPRESS_URL}stocks?stock=${term}&period=${timeframe}&goBack=${goBack}`);
+      [xData, yData] = await response.json();
+    //}
+    if(xData && xData.length > 0) {
       const price = prices.map.get(term);
       if(price !== undefined) {
         xData.push(1);
         yData.push(price);
-      }
-      if(loggedIn && pv) {
-        for(let i = 0; i < yData.length; i++) {
-          yData[i] = defaultAccount.buyingPower;
-        }
       }
       if(timeframe === "5Min") {
         for(let i = xData.length; i < 193; i++) {
@@ -109,9 +122,13 @@ function App() {
       }
       let bp;
       if(timeframe == "5Min") {
-        const a = await fetch(`${process.env.REACT_APP_EXPRESS_URL}percent?stock=${term}`);
-        const res = await a.json();
-        bp = res[0].bars[term][0].c;
+        if(loggedIn && pv)
+          bp = av;
+        else {
+          const a = await fetch(`${process.env.REACT_APP_EXPRESS_URL}percent?stock=${term}`);
+          const res = await a.json();
+          bp = res[0].bars[term][0].c;
+        }
         //draw a horizontal line at baseprice
         //baseline(ChartJS.getChart(document.querySelector(".portChart")), bp);
       }
@@ -138,15 +155,15 @@ function App() {
   }
 
   const newSearch = () => {
-    unSubCheck(subs, searchTerm, ws);
+    //unSubCheck(subs, searchTerm, ws);
     const st = document.querySelector(".searchBar").value.toUpperCase();
     if(st === "")
       return;
     focus = st;
     setSearchTerm(st);
     setPortView(false);
-    if(!subs.includes(st))
-      ws.send(JSON.stringify({action: "s", stocks: [st]}));
+    //if(!subs.includes(st))
+      //ws.send(JSON.stringify({action: "s", stocks: [st]}));
     focusChart(frameState, start, st, false);
   }
 
@@ -158,11 +175,14 @@ function App() {
   }
 
   const updatePort = (shares, price, buy, stock) => {
+    const options = {method: "PUT", header: {"content-type": "application/json"}};
     if(buy) {
-      setBP(prev => prev - shares * price);
+      const bp = Number((Number(buyPower) - shares * price).toFixed(2));
+      setBuyPower(bp);
+      fetch(`${process.env.REACT_APP_EXPRESS_URL}owned?user=test&action=add&change=${JSON.stringify([[stock, shares]])}&bp=${JSON.stringify(bp)}`, options);
       if(owned[stock] === undefined) {
         owned[stock] = shares;
-        if(!arr.includes(stock)) { //add to subs if stock is not currently on watchlist
+        if(!subs.includes(stock)) { //add to subs if stock is not currently on watchlist
           subs.push(stock);
           if(stock !== focus) //stock has been purchased, but user has clicked home / search
             ws.send(JSON.stringify({action: "s", stocks: [stock]}))
@@ -172,8 +192,10 @@ function App() {
         owned[stock] += shares;
     }
     else {
-      setBP(prev => prev + shares * price);
+      const bp = Number((Number(buyPower) + shares * price).toFixed(2));
+      setBuyPower(bp);
       owned[stock] -= shares;
+      fetch(`${process.env.REACT_APP_EXPRESS_URL}owned?user=test&action=remove&change=${JSON.stringify([[stock, shares]])}&bp=${bp}`, options);
       if(owned[stock] === 0) {
         delete owned[stock];
         if(!arr.includes(stock)) { //remove from subs if stock is not currently on watchlist
@@ -211,15 +233,19 @@ function App() {
     //fetch account data from database
     const response = await fetch(`${process.env.REACT_APP_EXPRESS_URL}users?action=read&user=test`);
     const res = await response.json();
-    const account = res.data;
+    account = res.data;
+    //update portData for each chart type on login
+    //loginUpdate(account);
+    setBuyPower(account.buyingPower);
+    setAV(account.accountValue);
     console.log(account);
     [arr, subs, owned] = [account.wl, account.subs, account.owned];
     //subscribe to each => onMessage, change price for that stock in prices map
-    ws = new WebSocket(process.env.REACT_APP_WS);//new EventSource(`http://localhost:5000/ws?stocks=${JSON.stringify(arr)}`);
+    /*ws = new WebSocket(process.env.REACT_APP_WS);//new EventSource(`http://localhost:5000/ws?stocks=${JSON.stringify(arr)}`);
     ws.onmessage = async (event) => {
       if(event.data === "open") {
         console.log(event.data);
-        ws.send(JSON.stringify({action: "s", stocks: arr}));
+        ws.send(JSON.stringify({action: "s", stocks: subs}));
       }
       else
         update(event.data);
@@ -229,8 +255,10 @@ function App() {
       ws.close();
     }
     window.onbeforeunload = () => {
-      ws.send(JSON.stringify({action: "u", stocks: arr}));
-    }
+      if(tempSub !== "" && !subs.includes(tempSub))
+        subs.push(tempSub);
+      ws.send(JSON.stringify({action: "u", stocks: subs}));
+    }*/
   }
 
   //initialize chart
@@ -241,7 +269,7 @@ function App() {
     <div className="app">
       <div className="head">
         <h1 className="homeBtn" onClick={() => {
-          unSubCheck(subs, searchTerm, ws);
+          //unSubCheck(subs, searchTerm, ws);
           focus = "";
           setSearchTerm("SPY");
           focusChart(frameState, start, defaultSearch, true);
@@ -283,7 +311,7 @@ function App() {
             <button className="timeButton" onFocus={() => btnClick("1Day", 12)}>1Y</button>
           </div>
           <hr className="line"></hr>
-          {portView ? <h3>Buying Power: ${commaFormat(bp)}</h3> : <h3>Shares: {owned[searchTerm] || 0}</h3>}
+          {portView ? <h3>Buying Power: ${commaFormat(buyPower)}</h3> : <h3>Shares: {owned[searchTerm] || 0}</h3>}
           <button onClick={() => doSmth()}>Click</button>
         </div>
         <div className="SidePanel">
@@ -300,7 +328,7 @@ function App() {
             <>
             {
               chartData !== undefined ?
-              <Exchange className="Exchange" stock={searchTerm} marketPrice={currPrice} contains={arr.includes(searchTerm)} stake={owned[searchTerm] || 0} bp={bp}
+              <Exchange className="Exchange" stock={searchTerm} marketPrice={currPrice} contains={arr.includes(searchTerm)} stake={owned[searchTerm] || 0} bp={buyPower}
                         action={(shares, price, buy, stock) => updatePort(shares, price, buy, stock)} wlChange={() => {
                 const options = {method: "PUT", header: {"content-type": "application/json"}};
                 //remove if wl contains stock

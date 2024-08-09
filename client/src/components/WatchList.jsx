@@ -69,7 +69,7 @@ const WatchList = (props) => {
       const focusElement = document.querySelector(`.percent#${props.stocks[i]}[list='${props.title}']`);
       if(focusElement)
         focusElement.style.color = color;
-      changeColor(ChartJS.getChart(document.querySelector(`.wlChart[stock='${props.stocks[i]}']`)), color)
+      changeColor(ChartJS.getChart(document.querySelector(`.wlChart[stock='${props.stocks[i]}'][list='${props.title}']`)), color)
       per.push(curr);
     }
     setPercents(per);
@@ -91,7 +91,7 @@ const WatchList = (props) => {
                 {props.count[stock] % 1 ? commaFormat(props.count[stock]) : props.count[stock]} Share{props.count[stock] !== 1 ? "s" : ""}</h3> : <></>}
             </div>
             <div className="watchChart">
-              <LineChart name="wlChart" stock={stock} chartData={chartList && chartList[index] ? chartList[index].data : ChartData} options={listOptions}></LineChart>
+              <LineChart name="wlChart" list={props.title} stock={stock} chartData={chartList && chartList[index] ? chartList[index].data : ChartData} options={listOptions}></LineChart>
             </div>
             <div className="numberPercent">
               <p>${props.curr[stock] ? props.curr[stock] : chartList && chartList[index] ? (Math.ceil(chartList[index].data.datasets[0].data.slice(-1)[0] * 100) / 100).toFixed(2) : "123.45"}</p>
