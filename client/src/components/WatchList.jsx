@@ -1,5 +1,5 @@
 import "../App.css"
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
 
 import { Line } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
@@ -36,11 +36,11 @@ const WatchList = (props) => {
     let temp = [];
     for(let i = 0; i < props.stocks.length; i++) {
       const a = await getData(props.stocks[i]);
-      const price = props.curr.map.get(props.stocks[i]);
+      /*const price = props.curr.map.get(props.stocks[i]);
       if(price !== undefined) {
         a.data.labels.push(1);
         a.data.datasets[0].data.push(price);
-      }
+      }*/
       for(let i = a.data.labels.length; i < 193; i++) {
         a.data.labels.push(1);
       }
@@ -57,7 +57,8 @@ const WatchList = (props) => {
       for(let i = 0; i < props.stocks.length; i++) {
         const response = await fetch(`${process.env.REACT_APP_EXPRESS_URL}percent?stock=${props.stocks[i]}`);
         const res = await response.json();
-        bp.push(res[0].bars[props.stocks[i]][0].c);
+        if(res[0].bars)
+          bp.push(res[0].bars[props.stocks[i]][0].c);
       }
       setBasePrices(bp);
     }
@@ -77,7 +78,7 @@ const WatchList = (props) => {
   
   useEffect(() => {getList()}, [props.stocks]);
 
-  useEffect(() => {getPercents()}, [chartList, props.curr])
+  useEffect(() => {getPercents()}, [chartList]);//props.curr
   return (
     <div>
       <h3 className="listHead">{props.title}</h3>
@@ -94,7 +95,7 @@ const WatchList = (props) => {
               <LineChart name="wlChart" list={props.title} stock={stock} chartData={chartList && chartList[index] ? chartList[index].data : ChartData} options={listOptions}></LineChart>
             </div>
             <div className="numberPercent">
-              <p>${props.curr[stock] ? props.curr[stock] : chartList && chartList[index] ? (Math.ceil(chartList[index].data.datasets[0].data.slice(-1)[0] * 100) / 100).toFixed(2) : "123.45"}</p>
+              <p>${chartList && chartList[index] ? (Math.ceil(chartList[index].data.datasets[0].data.slice(-1)[0] * 100) / 100).toFixed(2) : "123.45"}</p>
               <p className="percent" id={stock} list={props.title} change={percents}>{basePrices && chartList && percents ? percents[index] : "+0.00"}%</p>
             </div>
           </div>

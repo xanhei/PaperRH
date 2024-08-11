@@ -25,11 +25,13 @@ const getData = async (timeframe, goBack, term) => {
   dateURL = dateURL.substring(0, 10);
   if(goBack == 0)
     dateURL = await findOpen(dateURL, `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`);
+  if(!dateURL)
+    return [undefined, undefined];
   const response = await fetch(url + params + `&symbols=${term}` + `&timeframe=${timeframe}` + `&start=${dateURL}`, fetchOptions)
   const res = await response.json();
 
   //set chart data if response is ok
-  if(res.bars[term]) {
+  if(res.bars && res.bars[term]) {
     let xData = await new Promise((resolve) => {
       resolve(
         (timeframe === "1Day") ? res.bars[term].map((bar) => formatTime(bar.t, timeframe)) : ltdTimeFormat(res.bars[term], timeframe === "5Min")
@@ -65,6 +67,8 @@ const findOpen = async (startDate, endDate, percent = false) => {
   const response = await fetch(`${url}?start=${startDate}&end=${endDate}`, fetchOptions);
   const res = await response.json();
   const today = new Date();
+  if(!res || !res[res.length - 1])
+    return;
   const wait = (today.toISOString().substring(0, 10) == res[res.length - 1].date && (today.getHours() < 9 || today.getHours() == 9 && today.getMinutes() < 30));
   const i = percent ? 1 : 0;
   return wait ? res[res.length - 2 - i].date : res[res.length - 1 - i].date;
@@ -170,7 +174,127 @@ const ltdPriceFormat = (arr, isMinBar) => {
   return res;
 }
 
+
+//PORTFOLIO FUNCTIONS
+
+//compare 2 time points (used by getPortData), returns a <= b
+//day -> "XX:XX _M", week -> "MM-DD, XX:XX _M", else -> "MM-DD-YYYY"
+const timeLTE = (a, b, type) => {
+  if(type === "day") {
+    const aItr = a.length === 7 ? 1 : 2;
+    const bItr = b.length === 7 ? 1 : 2;
+    let [aHour, aMin] = [Number(a.substring(0, aItr)), Number(a.substring(aItr + 1, aItr + 3))];
+    let [bHour, bMin] = [Number(b.substring(0, bItr)), Number(b.substring(bItr + 1, aItr + 3))];
+    if(aHour !== 12 && a.substring(a.length - 2) === "PM")
+      aHour += 12;
+    if(bHour !== 12 && b.substring(b.length - 2) === "PM")
+      bHour += 12;
+    if(aHour === bHour) {
+      return aMin <= bMin;
+    }
+    return aHour < bHour;
+  }
+  else if(type === "week") {
+    const aPivot = a.indexOf('-'), bPivot = b.indexOf('-'); //used to find months/days
+    const aSpace = a.indexOf(' ') + 1, bSpace = b.indexOf(' ') + 1; //used to find beginning of hours
+    const aMonth = Number(a.substring(0, aPivot)), bMonth = Number(b.substring(0, bPivot));
+    const aDay = Number(a.substring(aPivot + 1, a.indexOf(',')) - aPivot + 1), bDay = Number(b.substring(bPivot + 1, b.indexOf(',') - bPivot + 1));
+    let aHour = Number(a.substring(aSpace, a.indexOf(':') - aSpace)), bHour = Number(b.substring(bSpace, b.indexOf(':') - bSpace));
+    if(aHour !== 12 && a.substring(a.length - 2) === "PM")
+      aHour += 12;
+    if(bHour !== 12 && b.substring(b.length - 2) === "PM")
+      bHour += 12;
+    //<-- calc hours
+    if(aMonth === 12 && bMonth === 1 || aMonth === 1 && bMonth === 12)
+      return aMonth > bMonth;
+    if(aMonth === bMonth) {
+      if(aDay === bDay)
+        return aHour <= bHour;
+      return aDay < bDay;
+    }
+    return aMonth < bMonth;
+  }
+  else {
+    const aPivot = a.indexOf('-'), bPivot = b.indexOf('-');
+    const [aMonth, aDay, aYear] = [a.substring(0, aPivot), a.substring(aPivot + 1, a.length - 5 - aPivot), a.substring(a.length - 4)];
+    const [bMonth, bDay, bYear] = [b.substring(0, bPivot), b.substring(bPivot + 1, b.length - 5 - bPivot), b.substring(b.length - 4)];
+    if(aYear === bYear) {
+      if(aMonth === bMonth)
+        return aDay <= bDay;
+      return aMonth < bMonth;
+    }
+    return aYear < bYear;
+  }
+}
+
+//getData for portfolio (from database)
+const getPortData = async (timeframe, goBack, account) => {
+  let itr;
+  const updates = {$set: {}};
+  //select chartType and data from chart
+  const select = {0: "day", 7: "week", 1: "month", 3: "month3", 6: "month6", 12: "year"};
+  const chartType = select[goBack];
+  let [xData, yData] = account.charts[chartType];
+  //fetch dummy time array
+  const [compX, compY] = await getData(timeframe, goBack, "NVDA");//fetch(`${process.env.REACT_APP_EXPRESS_URL}stocks?stock=NVDA&period=${timeframe}&goBack=${goBack}`);
+  if(chartType === "day") {
+    //get db data and compare times with most recent times
+    const end = new Date();
+    const start = new Date(end.getFullYear(), end.getMonth(), end.getDate() - 7);
+    const checkDate = await findOpen(`${start.getFullYear()}-${start.getMonth() + 1}-${start.getDate()}`, `${end.getFullYear()}-${end.getMonth() + 1}-${end.getDate()}`);
+    if(!checkDate)
+      return [undefined, undefined];
+    //if last time data was updated was >1Day, clear current db data, else concat data where necessary
+    if(account.lastLogin !== checkDate || !xData) {
+      updates["$set"]["lastLogin"] = checkDate;
+      itr = 0;
+      yData = [];
+    }
+    else
+      itr = xData.length;
+  }
+  else {
+    while(xData.length > 0 && xData[0] !== compX[0]) {
+      xData.shift();
+      yData.shift();
+    }
+    itr = xData.length;
+  }
+  //add data to yData accordingly
+  if(itr === compX.length)
+    return [updates, [xData, yData]]; //return if no new data needs to be added
+  for(let j = itr; j < compX.length; j++)
+    yData.push(account.buyingPower);
+  const owned = account.owned;
+  const ownedList = Object.keys(owned);
+  for(const stock of ownedList) {
+    //find indexOf(xData[itr]) for stock;
+    const [stockX, stockY] = await getData(timeframe, goBack, stock);
+    let stockItr = -1, tempI = itr;
+    while(stockItr === -1) {
+      stockItr = stockX.indexOf(compX[tempI]);
+      if(--tempI < 0)
+        break;
+    }
+    if(stockItr === -1)
+      stockItr = 0;
+    for(let j = itr; j < compX.length; j++) {
+      yData[j] += stockY[stockItr] * owned[stock];
+      while(stockItr < stockX.length - 1 && j < compX.length - 1 && timeLTE(stockX[stockItr + 1], compX[j + 1], chartType))
+        stockItr++;
+    }
+  }
+  const charts = account.charts;
+  charts[chartType] = [compX, yData];
+  updates["$set"]["charts"] = charts;
+  if(chartType === "day")
+    updates["$set"]["accountValue"] = Number(yData.slice(-1)[0].toFixed(2));
+
+  return [updates, [compX, yData]];
+}
+
 exports.getData = getData;
 exports.percentChange = percentChange;
 exports.findOpen = findOpen;
+exports.getPortData = getPortData;
 exports.fetchOptions = fetchOptions;
