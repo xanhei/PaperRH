@@ -15,18 +15,17 @@ const Exchange = (props) => {
   const [openQuery, setOpenQuery] = useState({});
   
   const findPrice = async () => {
-    setOpenQuery(true);
     const response = await fetch(`${process.env.REACT_APP_EXPRESS_URL}quotes?stock=${props.stock}`);
     const res = await response.json();
-    setOpenQuery(false);
-    setQuotesArr(res);
-    if(res.length > 0)
-      return res[Math.floor(res.length / 2)];
-    return [];
+    if(res.stock === document.querySelector(".portChart").getAttribute("stock"))
+      setQuotesArr(res.arr);
+    if(res.arr.length > 0)
+      return {stock: res.stock, price: res.arr[Math.floor(res.arr.length / 2)]};
+    return {stock: res.stock, price: undefined};
   }
 
   useEffect(() => setEditIndex(props.contains ? 1 : 0), [props.stock]); //ensures editPhrase is correct when new stock is searched from individual stock view
-  useEffect(() => {findPrice()}, [props.stock]);
+  useEffect(() => {setQuotesArr([]); findPrice()}, [props.stock]);
   return (
     <>
       <div className="buySell">
@@ -56,12 +55,12 @@ const Exchange = (props) => {
         </div>
         <div className="exchangeSection">
           <p>Market Price</p>
-          <p className="exchangeNum">${quotesArr.length > 0 ? commaFormat(quotesArr[Math.floor(quotesArr.length / 2)]) : props.marketPrice}</p>
+          <p className="exchangeNum">{quotesArr.length > 0 ? "$" + commaFormat(quotesArr[Math.floor(quotesArr.length / 2)]) : "Loading..."}</p>
         </div>
         <div className="exchangeSection">
           <p>Estimated Cost</p>
-          <p className="exchangeNum">${commaFormat(sd === "Shares" ? (quotesArr.length > 0 ?
-                                       quotesArr[Math.floor(quotesArr.length / 2)] : props.marketPrice.replaceAll(',', '') * inputVal) : inputVal)}</p>
+          <p className="exchangeNum">${commaFormat(sd === "Shares" ? ((quotesArr.length > 0 ?
+                                       quotesArr[Math.floor(quotesArr.length / 2)] : props.marketPrice.replaceAll(',', '')) * inputVal) : inputVal)}</p>
         </div>
         <p className="disclaimer">**Price may differ when order is submitted**</p>
       </div>
@@ -73,9 +72,15 @@ const Exchange = (props) => {
         const buyPower = props.bp;
         const numOwned = props.stake;
         const stock = props.stock;
-        let mult = await findPrice();
-        if(mult.length == 0)
-          mult = Number(props.marketPrice); //REMOVE LATER
+        let mult;
+        while(!mult) {
+          const temp = await findPrice();
+          if(temp.stock !== props.stock)
+            continue;
+          mult = temp[Math.floor(temp.length / 2)];
+          if(!mult)
+            mult = Number(props.marketPrice); //REMOVE LATER
+        }
         amount /= (sd === "Dollars" ? mult : 1);
         if(review(amount, mult, type, dollars, buyPower, numOwned))
           props.action(amount, mult, type, stock);

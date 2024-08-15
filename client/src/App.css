@@ -16,8 +16,20 @@ html {
 }
 
 .homeBtn {
+  font-weight: normal;
+  color: #b3b3b3;
+  min-height: 20px;
   margin-left: 2%;
   cursor: pointer;
+  padding-top: 0.1%;
+  padding-bottom: 0.1%;
+  padding-left: 0.1%;
+  padding-right: 0.1%;
+  border: 2px solid #333;
+  border-radius: 10%;
+}
+.homeBtn:active {
+  background-color: #333;
 }
 
 .search {
@@ -47,7 +59,7 @@ html {
 }
 
 .searchBar:hover {
-  background-color: #333;
+  background-color: #292929;
 }
 .searchIcon {
   position: absolute;
@@ -56,9 +68,52 @@ html {
   width: 20px;
 }
 
+.dropdown {
+  position: relative;
+  border: 1px solid #333;
+  border-radius: 2%;
+  margin-top: 1%;
+  width: 101%;
+  z-index: 1;
+  background-color: #292929;
+}
+
+.menuComponent {
+  display: flex;
+}
+.menuComponent:hover {
+  cursor: pointer; 
+  background-color: #333;
+}
+
+.menuTicker {
+  margin-top: 0%;
+  margin-bottom: 0%;
+  padding-top: 2%;
+  padding-bottom: 2%;
+  text-align: left;
+  text-indent: 9.5%;
+  font-family: Capsula Sans, Sans-Serif, Geometric, Minimal;
+  font-size: 80%;
+  margin-left: 8.5%;
+  min-width: 15%;
+}
+
+.menuName {
+  margin-top: 0%;
+  margin-bottom: 0%;
+  padding-top: 2%;
+  padding-bottom: 2%;
+  font-family: Capsula Sans, Sans-Serif, Geometric, Minimal;
+  font-size: 80%;
+  margin-left: 10%;
+}
+
 .main {
+  position: relative;
   display: flex;
   justify-content: space-between;
+  z-index: 0;
 }
 
 .chartDiv {
@@ -145,12 +200,16 @@ html {
   cursor: pointer;
 }
 
+.watchNameDiv {
+  min-width: 15%
+}
+
 .watchName {
   font-weight: bold;
-  min-width: 17.7%;
 }
 
 .watchChart {
+  padding-left: 1%;
   max-height: 55%;
 }
 

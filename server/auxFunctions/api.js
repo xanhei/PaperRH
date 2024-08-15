@@ -198,13 +198,12 @@ const timeLTE = (a, b, type) => {
     const aPivot = a.indexOf('-'), bPivot = b.indexOf('-'); //used to find months/days
     const aSpace = a.indexOf(' ') + 1, bSpace = b.indexOf(' ') + 1; //used to find beginning of hours
     const aMonth = Number(a.substring(0, aPivot)), bMonth = Number(b.substring(0, bPivot));
-    const aDay = Number(a.substring(aPivot + 1, a.indexOf(',')) - aPivot + 1), bDay = Number(b.substring(bPivot + 1, b.indexOf(',') - bPivot + 1));
-    let aHour = Number(a.substring(aSpace, a.indexOf(':') - aSpace)), bHour = Number(b.substring(bSpace, b.indexOf(':') - bSpace));
+    const aDay = Number(a.substring(aPivot + 1, a.indexOf(','))), bDay = Number(b.substring(bPivot + 1, b.indexOf(',')));
+    let aHour = Number(a.substring(aSpace, a.indexOf(':'))), bHour = Number(b.substring(bSpace, b.indexOf(':')));
     if(aHour !== 12 && a.substring(a.length - 2) === "PM")
       aHour += 12;
     if(bHour !== 12 && b.substring(b.length - 2) === "PM")
       bHour += 12;
-    //<-- calc hours
     if(aMonth === 12 && bMonth === 1 || aMonth === 1 && bMonth === 12)
       return aMonth > bMonth;
     if(aMonth === bMonth) {
@@ -216,8 +215,8 @@ const timeLTE = (a, b, type) => {
   }
   else {
     const aPivot = a.indexOf('-'), bPivot = b.indexOf('-');
-    const [aMonth, aDay, aYear] = [a.substring(0, aPivot), a.substring(aPivot + 1, a.length - 5 - aPivot), a.substring(a.length - 4)];
-    const [bMonth, bDay, bYear] = [b.substring(0, bPivot), b.substring(bPivot + 1, b.length - 5 - bPivot), b.substring(b.length - 4)];
+    const [aMonth, aDay, aYear] = [a.substring(0, aPivot), a.substring(aPivot + 1, a.length - 5), a.substring(a.length - 4)];
+    const [bMonth, bDay, bYear] = [b.substring(0, bPivot), b.substring(bPivot + 1, b.length - 5), b.substring(b.length - 4)];
     if(aYear === bYear) {
       if(aMonth === bMonth)
         return aDay <= bDay;
@@ -231,6 +230,7 @@ const timeLTE = (a, b, type) => {
 const getPortData = async (timeframe, goBack, account) => {
   let itr;
   const updates = {$set: {}};
+  const end = new Date();
   //select chartType and data from chart
   const select = {0: "day", 7: "week", 1: "month", 3: "month3", 6: "month6", 12: "year"};
   const chartType = select[goBack];
@@ -239,7 +239,6 @@ const getPortData = async (timeframe, goBack, account) => {
   const [compX, compY] = await getData(timeframe, goBack, "NVDA");//fetch(`${process.env.REACT_APP_EXPRESS_URL}stocks?stock=NVDA&period=${timeframe}&goBack=${goBack}`);
   if(chartType === "day") {
     //get db data and compare times with most recent times
-    const end = new Date();
     const start = new Date(end.getFullYear(), end.getMonth(), end.getDate() - 7);
     const checkDate = await findOpen(`${start.getFullYear()}-${start.getMonth() + 1}-${start.getDate()}`, `${end.getFullYear()}-${end.getMonth() + 1}-${end.getDate()}`);
     if(!checkDate)
@@ -258,6 +257,8 @@ const getPortData = async (timeframe, goBack, account) => {
       xData.shift();
       yData.shift();
     }
+    if(compX.slice(-1)[0] === `${end.getMonth}-${end.getDate}-${end.getFullYear}` && end.getHours() < 16)
+      compX.pop();
     itr = xData.length;
   }
   //add data to yData accordingly

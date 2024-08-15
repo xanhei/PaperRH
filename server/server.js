@@ -168,7 +168,7 @@ app.get("/quotes", async (req, res) => {
     const response = await fetch(url, chartFunc.fetchOptions);
     const data = await response.json();
     if(!data.is_open)
-      setTimeout(() => {res.send([])}, 3000);
+      setTimeout(() => {res.send({stock: req.query.stock, arr: []})}, 3000);
     else {
       //sub/unsub functions
       const checkSub = () => {
@@ -188,12 +188,11 @@ app.get("/quotes", async (req, res) => {
         AlpacaWS.send(JSON.stringify(unSub));
       }
 
-      let med = [];
-      console.log(openQueries);
+      let med = {stock: req.query.stock, arr: []};
       if(!openQueries.has(req.query.stock))
         checkSub();
       const forceClose = setInterval(() => {
-        if(med.length > 0) {
+        if(med.arr.length > 0) {
           clearInterval(forceClose);
           if(openQueries.has(req.query.stock))
             remSub();
@@ -207,8 +206,8 @@ app.get("/quotes", async (req, res) => {
       const qListener = async (message) => {
         const m = await JSON.parse(message);
         if(m[0].T === "t" && m[0].S === req.query.stock) {
-          med.push(m[0].p);
-          if(med.length >= 5) {
+          med.arr.push(m[0].p);
+          if(med.arr.length >= 5) {
             clearInterval(forceClose);
             if(openQueries.has(req.query.stock))
               remSub();
@@ -366,9 +365,59 @@ app.get("/accountInit", async (req, res) => {
   res.send({data: result})
 });
 
+app.get("/tickers", async (req, res) => {
+  try {
+    const term = req.query.term.toUpperCase();
+    const response = await fetch(`https://api.polygon.io/v3/reference/tickers?market=stocks&limit=1000&search=${term}&apiKey=${process.env.POLYGON_KEY}`);
+    const sendObj = await response.json();
+    const sendArr = sendObj.results;
+    if(!sendArr)
+      res.send({tickers: [], names: []});
+    else {
+      const tickers = [], names = [];
+      for(const stock of sendArr) {
+        if(stock.ticker === term) {
+          tickers.push(stock.ticker);
+          names.push(stock.name);
+          break;
+        }
+      }
+      for(let i = tickers.length; (i < 5 && i < sendArr.length); i++) {
+        tickers.push(sendArr[i].ticker);
+        let tempName = sendArr[i].name;
+        if(tempName.length >= 30)
+          tempName = tempName.substring(0, 30) + "...";
+        names.push(tempName);
+      }
+      res.send({tickers: tickers, names: names});
+    }
+  } catch(error) {
+    console.log(error);
+    res.send({error: error});
+  }
+});
+
 app.get("/temp", async (req, res) => {
-  const arr = ["SPY", "AMD", "AAPL"];
-  const updates = {$set: {lastLogin: "", accountValue: 100000}};
+  const account = await collection.findOne({userID: "test"}, {projection: {_id: 0}});
+  const charts = account.charts;
+  const params = [
+    ["1Hour", 7, "week"],
+    ["1Day", 1, "month"],
+    ["1Day", 3, "month3"],
+    ["1Day", 6, "month6"],
+    ["1Day", 12, "year"],
+  ];
+  for(const p of params) {
+    const data = await chartFunc.getData(p[0], p[1], "NVDA");
+    for(const i in data[0])
+      data[1][i] = 100000;
+    if(p[2] === "week") {
+      data[0].splice(data[0].length - 4, 4);
+      data[1].splice(data[1].length - 4, 4);
+    }
+    charts[p[2]] = data;
+  }
+  const updates = {$set: {charts: charts}};
   const result = await collection.updateOne({userID: "test"}, updates);
   res.send({data: result});
   /*const a = await collection.find({}, {projection: {_id: 0}}).toArray();

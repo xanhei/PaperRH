@@ -1,11 +1,11 @@
 import "../App.css"
-import { useState, useEffect, memo } from 'react';
+import { useState, useEffect } from 'react';
 
 import { Line } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import LineChart from "./LineChart";
 import { listOptions, ChartData, ChartClass } from "../Data";
-import { percentFormat } from "../auxFunctions/functions.js";
+import { percentFormat, formatDailyChart } from "../auxFunctions/functions.js";
 import { changeColor } from "../chartAssets/updateData.js";
 import { commaFormat } from "../auxFunctions/functions.js";
 
@@ -41,9 +41,7 @@ const WatchList = (props) => {
         a.data.labels.push(1);
         a.data.datasets[0].data.push(price);
       }*/
-      for(let i = a.data.labels.length; i < 193; i++) {
-        a.data.labels.push(1);
-      }
+      formatDailyChart(a.data.labels);
       temp.push(a);
     }
     setChartList(temp);
@@ -86,7 +84,7 @@ const WatchList = (props) => {
       {
         props.stocks.map((stock, index) => 
           <div className="listView" key={index} onClick={() => props.click(stock)}>
-            <div>
+            <div className="watchNameDiv">
               <h3 className="watchName">{stock}</h3>
               {props.count ? <h3 style={{fontWeight: "normal", marginTop: "-15%"}}>
                 {props.count[stock] % 1 ? commaFormat(props.count[stock]) : props.count[stock]} Share{props.count[stock] !== 1 ? "s" : ""}</h3> : <></>}

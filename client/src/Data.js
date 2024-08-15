@@ -110,5 +110,14 @@ export const defaultAccount = {
   buyingPower: 100000,
   wl: ["SPY","AMD","AAPL"],
   owned: {},
-  subs: ["SPY","AMD","AAPL"]
+  subs: ["SPY","AMD","AAPL"],
+  charts: {
+    "day": [],
+    "week": [],
+    "month": [],
+    "month3": [],
+    "month6": [],
+    "year": [],
+  },
+  lastLogin: ""
 };

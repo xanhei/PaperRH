@@ -10,9 +10,10 @@ import { Line } from 'react-chartjs-2';
 import LineChart from "./components/LineChart.jsx";
 import WatchList from "./components/WatchList.jsx";
 import Exchange from './components/buySell.jsx';
+import DropDown from "./components/menu.jsx"; //free api has limit of 5 calls/min
 import { verticalHoverLine } from "./chartAssets/verticalLine.js";
 import ctt from "./chartAssets/ctt.js";
-import { focusBtn, commaFormat, percentFormat, chartSubHeader, unSubCheck, getPortData, loginUpdate } from "./auxFunctions/functions.js";
+import { focusBtn, commaFormat, percentFormat, chartSubHeader, unSubCheck, loginUpdate, formatDailyChart } from "./auxFunctions/functions.js";
 import { addData, changeColor } from './chartAssets/updateData.js';
 //import { baseline } from './chartAssets/baseline.js';
 
@@ -32,6 +33,7 @@ let owned = {}; //stocks list
 let ownedList = []; //because if you try to use Object.keys, react freaks out and rerenders the whole damn watchlist whenever any state is updated (see Stocks watchlist)
 let tempSub = ""; //used to correctly unsub from a stock when user unloads while on individual stock screen that is not in subs list
 let account;
+let menuTimeout;
 
 //const doSmth = async () => {
   /*const es = new EventSource(`http://localhost:5000/ws?stocks=${JSON.stringify(arr)}`);
@@ -52,15 +54,15 @@ function App() {
   const [basePrice, setBasePrice] = useState(); //used for price change calculation
   const [loggedIn, setLoggedIn] = useState(false);
   const [buyPower, setBuyPower] = useState(100000);
-  const [av, setAV] = useState();
+  const [tickers, setTickers] = useState([]); //used for dropdown search menu
+  const [names, setNames] = useState([]); //used for dropdown search menu
 
   const doSmth = async () => {   
-    const result = await fetch("/temp");
-    const res = await result.json();
-    console.log(res.data);
-    /*const result = await fetch("/port?period=5Min&goBack=0&user=test");
-    const [xData, yData] = await result.json();
-    console.log(yData);*/
+    /*const response = await fetch("/tickers?term=aap");
+    const res = await response.json();
+    console.log(res);*/
+    const today = new Date();
+    console.log(today.getHours());
   }
 
   //unhover listener (couldn't find out how to import correctly)
@@ -97,8 +99,17 @@ function App() {
         console.log(response);
       }
       setSearchTerm("Portfolio");
-      if(yData)
-        bp = yData[0];
+      if(yData) {
+        if(timeframe === "5Min") {
+          const now = new Date();
+          let i = 1;
+          if(now.getHours() < 4 || now.getHours() >= 16)
+            i++;
+          bp = account.charts["month"][1][account.charts["month"][1].length - i];
+        }
+        else
+          bp = yData[0];
+      }
     }
     else {
       const response = await fetch(`${process.env.REACT_APP_EXPRESS_URL}stocks?stock=${term}&period=${timeframe}&goBack=${goBack}`);
@@ -110,11 +121,8 @@ function App() {
         xData.push(1);
         yData.push(price);
       }*/
-      if(timeframe === "5Min") {
-        for(let i = xData.length; i < 193; i++) {
-          xData.push(1);
-        }
-      }
+      if(timeframe === "5Min")
+        formatDailyChart(xData);
       if(!pv) {
         if(timeframe === "5Min") {
           const a = await fetch(`${process.env.REACT_APP_EXPRESS_URL}percent?stock=${term}`);
@@ -146,17 +154,38 @@ function App() {
     focusChart(timeframe, goBack, searchTerm);
   }
 
-  const newSearch = () => {
+  const newSearch = (stock) => {
     //unSubCheck(subs, searchTerm, ws);
-    const st = document.querySelector(".searchBar").value.toUpperCase();
-    if(st === "")
+    if(!stock)
+      stock = document.querySelector(".searchBar").value.toUpperCase();
+    if(stock === "")
       return;
-    focus = st;
-    setSearchTerm(st);
+    focus = stock;
+    setSearchTerm(stock);
     setPortView(false);
+    setTickers([]);
+    setNames([]);
+    const st = document.querySelector(".searchBar").value = "";
     //if(!subs.includes(st))
       //ws.send(JSON.stringify({action: "s", stocks: [st]}));
-    focusChart(frameState, start, st, false);
+    focusChart(frameState, start, stock, false);
+  }
+
+  const findTickers = () => {
+    const st = document.querySelector(".searchBar").value;
+    if(st === "") {
+      clearTimeout(menuTimeout);
+      setTickers([]);
+      setNames([]);
+      return;
+    }
+    clearTimeout(menuTimeout);
+    menuTimeout = setTimeout(async () => {
+      const response = await fetch(`/tickers?term=${st}`);
+      const res = await response.json();
+      setTickers(res.tickers);
+      setNames(res.names);
+    }, 750);
   }
 
   const wlUpdate = (stock) => {
@@ -227,7 +256,6 @@ function App() {
     //update portData for each chart type on login
     //loginUpdate(account);
     setBuyPower(account.buyingPower);
-    setAV(account.accountValue);
     console.log(account);
     [wl, subs, owned] = [account.wl, account.subs, account.owned];
     ownedList = Object.keys(owned);
@@ -264,18 +292,11 @@ function App() {
           focus = "";
           focusChart(frameState, start, defaultSearch, true);
           setPortView(true);
-        }}>App</h1>
+        }}>Home</h1>
         <div className="search">
-          <input
-            className="searchBar"
-            placeholder="Search">
-          </input>
-          <img
-            className="searchIcon"
-            src={SearchIcon}
-            alt="search"
-            onClick={() => newSearch()}>
-          </img>
+          <input className="searchBar" placeholder="Search" spellCheck="false" onChange={() => findTickers()}></input>
+          <img className="searchIcon" src={SearchIcon} alt="search" onClick={() => newSearch()}></img>
+          {tickers.length > 0 ? <DropDown tickers={tickers} names={names} click={(stock) => newSearch(stock)}></DropDown> : <></>}
         </div>
       </div>
       <div className="main">
