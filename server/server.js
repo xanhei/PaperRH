@@ -397,6 +397,10 @@ app.get("/tickers", async (req, res) => {
   }
 });
 
+app.get("/createAccount", async (req, res) => {});
+
+app.get("/validateLogin", (req, res) => {});
+
 app.get("/temp", async (req, res) => {
   const account = await collection.findOne({userID: "test"}, {projection: {_id: 0}});
   const charts = account.charts;

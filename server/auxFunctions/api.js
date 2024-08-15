@@ -257,7 +257,7 @@ const getPortData = async (timeframe, goBack, account) => {
       xData.shift();
       yData.shift();
     }
-    if(compX.slice(-1)[0] === `${end.getMonth}-${end.getDate}-${end.getFullYear}` && end.getHours() < 16)
+    if(compX.slice(-1)[0] === `${end.getMonth() + 1}-${end.getDate()}-${end.getFullYear()}` && end.getHours() < 16)
       compX.pop();
     itr = xData.length;
   }

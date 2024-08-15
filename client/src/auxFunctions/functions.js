@@ -97,7 +97,7 @@ export const review = (amount, mult, buy, dollars, bp, stake) => {
 //
 export const formatDailyChart = (xData) => {
   const now = new Date();
-  if(now.getHours() < 4 || now.getHours() >= 8)
+  if(now.getHours() < 4 || now.getHours() >= 20)
     return xData;
   const start = xData.slice(-1)[0];
   const pivot = start.indexOf(':');

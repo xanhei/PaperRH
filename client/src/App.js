@@ -134,8 +134,6 @@ function App() {
         }
         else
           bp = yData[0];
-        //draw a horizontal line at baseprice
-        //baseline(ChartJS.getChart(document.querySelector(".portChart")), bp);
       }
       const color = yData[yData.length - 1] >= bp ? "rgb(31, 217, 22)" : "rgb(242, 80, 5)";
       setBasePrice(bp);
