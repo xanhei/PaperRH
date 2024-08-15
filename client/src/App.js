@@ -184,7 +184,7 @@ function App() {
     }
     clearTimeout(menuTimeout);
     const endBuffer = async () => {
-      const response = await fetch(`/tickers?term=${st}`);
+      const response = await fetch(`${process.env.REACT_APP_EXPRESS_URL}tickers?term=${st}`);
       const res = await response.json();
       setTickers(res.tickers);
       setNames(res.names);
