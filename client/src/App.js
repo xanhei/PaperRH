@@ -33,7 +33,7 @@ let owned = {}; //stocks list
 let ownedList = []; //because if you try to use Object.keys, react freaks out and rerenders the whole damn watchlist whenever any state is updated (see Stocks watchlist)
 let tempSub = ""; //used to correctly unsub from a stock when user unloads while on individual stock screen that is not in subs list
 let account;
-let menuTimeout;
+let menuTimeout, testTimeout;
 
 //const doSmth = async () => {
   /*const es = new EventSource(`http://localhost:5000/ws?stocks=${JSON.stringify(arr)}`);
@@ -61,8 +61,11 @@ function App() {
     /*const response = await fetch("/tickers?term=aap");
     const res = await response.json();
     console.log(res);*/
-    const today = new Date();
-    console.log(today.getHours());
+    clearTimeout(testTimeout);
+    const testFunc = async () => {
+      console.log("testTimeout");
+    }
+    testTimeout = setTimeout(testFunc, 1000);
   }
 
   //unhover listener (couldn't find out how to import correctly)
