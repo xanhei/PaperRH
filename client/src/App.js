@@ -33,14 +33,7 @@ let owned = {}; //stocks list
 let ownedList = []; //because if you try to use Object.keys, react freaks out and rerenders the whole damn watchlist whenever any state is updated (see Stocks watchlist)
 let tempSub = ""; //used to correctly unsub from a stock when user unloads while on individual stock screen that is not in subs list
 let account;
-let menuTimeout, testTimeout;
-
-//const doSmth = async () => {
-  /*const es = new EventSource(`http://localhost:5000/ws?stocks=${JSON.stringify(arr)}`);
-  es.onmessage = (message) => {console.log(message.data)};
-  es.onerror = () => {es.close()};*/
-  //const chart = document.querySelectorAll(".wlChart").forEach(chart => console.log(chart.getAttribute("stock")));
-//}
+let menuTimeout; //prevent unnecessary queries to polygon.io api (for menu dropdown tickers)
 
 function App() {
   const [chartData, setChartData] = useState(); //data drawn on chart
@@ -57,15 +50,10 @@ function App() {
   const [tickers, setTickers] = useState([]); //used for dropdown search menu
   const [names, setNames] = useState([]); //used for dropdown search menu
 
-  const doSmth = async () => {   
-    /*const response = await fetch("/tickers?term=aap");
+  const doSmth = async () => {
+    const response = await fetch(`${process.env.REACT_APP_EXPRESS_URL}hours`);
     const res = await response.json();
-    console.log(res);*/
-    clearTimeout(testTimeout);
-    const testFunc = async () => {
-      console.log("testTimeout");
-    }
-    testTimeout = setTimeout(testFunc, 1000);
+    console.log(res.data);
   }
 
   //unhover listener (couldn't find out how to import correctly)

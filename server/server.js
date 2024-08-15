@@ -429,6 +429,11 @@ app.get("/temp", async (req, res) => {
   res.send({data: 0});*/
 });
 
+app.get("/hours", (req, res) => {
+  const now = new Date();
+  res.send({data: now.getHours()});
+});
+
 // use dynamically set PORT value (or 5000 if PORT is not set)
 const port = process.env.PORT || 5000;
 connect();
