@@ -180,12 +180,13 @@ function App() {
       return;
     }
     clearTimeout(menuTimeout);
-    menuTimeout = setTimeout(async () => {
+    const endBuffer = async () => {
       const response = await fetch(`/tickers?term=${st}`);
       const res = await response.json();
       setTickers(res.tickers);
       setNames(res.names);
-    }, 750);
+    }
+    menuTimeout = setTimeout(endBuffer, 750);
   }
 
   const wlUpdate = (stock) => {
