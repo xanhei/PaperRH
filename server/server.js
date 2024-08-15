@@ -371,7 +371,6 @@ app.get("/tickers", async (req, res) => {
     const response = await fetch(`https://api.polygon.io/v3/reference/tickers?market=stocks&limit=1000&search=${term}&apiKey=${process.env.POLYGON_KEY}`);
     const sendObj = await response.json();
     const sendArr = sendObj.results;
-    console.log(term);
     if(!sendArr)
       res.send({tickers: [], names: []});
     else {
