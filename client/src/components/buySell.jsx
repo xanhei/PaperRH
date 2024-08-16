@@ -77,9 +77,12 @@ const Exchange = (props) => {
           const temp = await findPrice();
           if(temp.stock !== props.stock)
             continue;
-          mult = temp[Math.floor(temp.length / 2)];
-          if(!mult)
-            mult = Number(props.marketPrice); //REMOVE LATER
+          if(temp.length > 0)
+            mult = temp[Math.floor(temp.length / 2)];
+          else {
+            alert("Unable to place order right now");
+            return;
+          }
         }
         amount /= (sd === "Dollars" ? mult : 1);
         if(review(amount, mult, type, dollars, buyPower, numOwned))

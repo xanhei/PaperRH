@@ -2,6 +2,7 @@ const express = require("express");
 const chartFunc = require("./auxFunctions/api.js");
 const cors = require('cors');
 const WebSocket = require("ws");
+const bcrypt = require("bcryptjs");
 require("dotenv").config();
 const app = express();
 require("express-ws")(app);
@@ -102,7 +103,7 @@ app.get("/quotes", async (req, res) => {
     const response = await fetch(url, chartFunc.fetchOptions);
     const data = await response.json();
     if(!data.is_open)
-      setTimeout(() => {res.send({stock: req.query.stock, arr: []})}, 3000);
+      res.send({stock: req.query.stock, arr: []});
     else {
       //sub/unsub functions
       const checkSub = () => {
@@ -173,9 +174,10 @@ app.get("/prevOpen", async (req, res) => {
 
 //handle CRUD for users database
 app.get("/findUser", async (req, res) => {
-  const account = await collection.findOne({userID: req.query.user, password: req.query.password}, {projection: {_id: 0, password: 0}});
+  const account = await collection.findOne({userID: req.query.user}, {projection: {_id: 0}});
   //update each port chart
-  if(account) {
+  if(account && bcrypt.compareSync(req.query.password, account.password)) {
+    delete account.password;
     let updates;
     const params = [
       ["5Min", 0, "day"],
@@ -205,9 +207,11 @@ app.get("/accountInit", async (req, res) => {
   else {
     const startVal = 100000;
     const defaultWL = ["SPY", "AAPL", "NVDA"];
+    const salt = await bcrypt.genSalt(10);
+    const password = await bcrypt.hash(req.query.password, salt);
     const account = {
       userID: req.query.user,
-      password: req.query.password,
+      password: password,
       accountValue: startVal,
       buyingPower: startVal,
       wl: defaultWL,
@@ -359,7 +363,7 @@ app.get("/tickers", async (req, res) => {
 
 app.get("/temp", async (req, res) => {
   const result = await collection.deleteOne({userID: req.query.user});
-  res.send(result);
+  res.send({data: result});
 });
 
 // use dynamically set PORT value (or 5000 if PORT is not set)

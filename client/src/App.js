@@ -53,7 +53,7 @@ function App() {
   const doSmth = async () => {
     const response = await fetch("/temp?user=abc");
     const res = await response.json();
-    console.log(res);
+    console.log(res.data);
   }
 
   //unhover listener (couldn't find out how to import correctly)
@@ -234,6 +234,14 @@ function App() {
     return "";
   }
 
+  const logout = () => {
+    account = undefined;
+    [wl, owned, ownedList, subs] = [[], {}, [], []];
+    setTickers([]);
+    setChartData(undefined);
+    setLoggedIn(false);
+  }
+
   return (
     <>{ !loggedIn ? <LoginScreen login={(user, pass, newAcct) => loginCheck(user, pass, newAcct)}></LoginScreen> :
       <div className="app">
@@ -249,6 +257,7 @@ function App() {
               <img className="searchIcon" src={SearchIcon} alt="search" onClick={() => newSearch()}></img>
               {tickers.length > 0 ? <DropDown tickers={tickers} names={names} click={(stock) => newSearch(stock)}></DropDown> : <></>}
             </div>
+            <button className="logout" onClick={() => logout()}>Sign out</button>
           </div>
         <div className="main">
           <div className="chartDiv">
