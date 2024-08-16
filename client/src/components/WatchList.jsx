@@ -17,9 +17,7 @@ const params = "?sort=asc";
 
 const getData = async (term) => {
   const response = await fetch(`${process.env.REACT_APP_EXPRESS_URL}stocks?stock=${term}&period=5Min&goBack=0`);
-  //`${process.env.REACT_APP_EXPRESS_URL}stocks?stock=${term}&period=${timeframe}&goBack=${goBack}`
   const [xData, yData] = await response.json();
-  const c = new ChartClass(xData, yData, 1);
   //set chart data if response is ok
   if(xData) {
     return new ChartClass(xData, yData, "rgb(31, 217, 22)", 1);
@@ -36,11 +34,6 @@ const WatchList = (props) => {
     let temp = [];
     for(let i = 0; i < props.stocks.length; i++) {
       const a = await getData(props.stocks[i]);
-      /*const price = props.curr.map.get(props.stocks[i]);
-      if(price !== undefined) {
-        a.data.labels.push(1);
-        a.data.datasets[0].data.push(price);
-      }*/
       formatDailyChart(a.data.labels);
       temp.push(a);
     }
@@ -76,7 +69,7 @@ const WatchList = (props) => {
   
   useEffect(() => {getList()}, [props.stocks]);
 
-  useEffect(() => {getPercents()}, [chartList]);//props.curr
+  useEffect(() => {getPercents()}, [chartList]);
   return (
     <div>
       <h3 className="listHead">{props.title}</h3>

@@ -298,6 +298,60 @@ input[type="number"]::-webkit-inner-spin-button {
   background-color: #292929;
 }
 
+.loginPage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 1%;
+}
+
+.switchBtns {
+  display: flex;
+}
+
+.switchLoginMethod {
+  background-color: transparent;
+  border: 0px transparent;
+  color: rgb(36, 167, 219);
+  font-weight: bold;
+  cursor: pointer;
+}
+.switchLoginMethod:active {
+  color: rgb(10, 102, 207);
+}
+
+.userPass {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 1%;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.loginError {
+  margin-top: 0%;
+  padding-top: 0.3%;
+  padding-bottom: 0.3%;
+  padding-left: 0.3%;
+  padding-right: 0.3%;
+  border: 1px solid red;
+  border-radius: 5px;
+  background-color: #333;
+}
+
+.userPassInput {
+  background-color: #333;
+  border: 3px solid #292929;
+  caret-color: white;
+  color: white;
+  text-indent: 3%;
+  width: 10%;
+  min-width: 160px;
+  border-radius: 10px;
+  margin-bottom: 1%;
+}
+
 @media (max-width: 900px) {
   .head {
     height: 80px;

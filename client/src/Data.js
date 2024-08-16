@@ -106,6 +106,7 @@ export const listOptions = {
 
 export const defaultAccount = {
   userID: "",
+  password: "",
   accountValue: 100000,
   buyingPower: 100000,
   wl: ["SPY","AMD","AAPL"],

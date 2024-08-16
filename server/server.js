@@ -46,8 +46,6 @@ AlpacaWS.on("message", async (message) => {
 const subs = {};
 const openQueries = new Set();
 
-//app.use(express.json()); //allows app.post route handler to parse json
-
 app.get("/", (req, res) => {
   res.send("Server is running");
 });
@@ -92,70 +90,6 @@ app.get("/percent", async (req, res) => {
     console.error(error);
     res.send(undefined);
   }
-});
-
-//minute bars (up to date)
-app.ws("/ws", async (ws, req) => {
-  //message handler
-  const mListener = async (message) => {
-    const m = await JSON.parse(message);
-    if(m[0].T === "b")
-        ws.send(JSON.stringify(m[0]));
-    else if(m[0].T !== "t")
-      console.log(m[0]);
-  }
-  AlpacaWS.on("message", mListener);
-
-  console.log("Client connected");
-  //let arr = [];
-
-  ws.on("message", async (message) => {
-    const m = await JSON.parse(message);
-    console.log(m);
-    if(m.action === "s") {
-      let subArr = [];
-      for(let i = 0; i < m.stocks.length; i++) {
-        if(!subs[m.stocks[i]]) {
-          subs[m.stocks[i]] = 1;
-          subArr.push(m.stocks[i]);
-        }
-        else
-          subs[m.stocks[i]]++;
-      }
-      if(subArr.length > 0) {
-        const subMsg = {
-          action: "subscribe",
-          bars: subArr
-        };
-        AlpacaWS.send(JSON.stringify(subMsg));
-      }
-    }
-    else if(m.action === "u") {
-      let unSubArr = [];
-      for(let i = 0; i < m.stocks.length; i++) {
-        if(--subs[m.stocks[i]] <= 0) {
-          delete subs[m.stocks[i]];
-          unSubArr.push(m.stocks[i]);
-        }
-      }
-      if(unSubArr.length > 0) {
-        const unSub = {
-          action: "unsubscribe",
-          bars: unSubArr
-        };
-        AlpacaWS.send(JSON.stringify(unSub));
-      }
-    }
-  });
-
-  //client connection close
-  ws.on("close", () => {
-    console.log("Client closed WS");
-    AlpacaWS.removeListener("message", mListener);
-    ws.close();
-  });
-
-  ws.send("open");
 });
 
 //price checker on buy/sell
@@ -229,6 +163,7 @@ app.get("/open", async (req, res) => {
   res.send(data.is_open);
 });
 
+//allow client to check last market open date
 app.get("/prevOpen", async (req, res) => {
   const end = new Date();
   const start = new Date(end.getFullYear(), end.getMonth(), end.getDate() - 7);
@@ -237,24 +172,73 @@ app.get("/prevOpen", async (req, res) => {
 });
 
 //handle CRUD for users database
-app.get("/users", async (req, res) => {
-  //console.log(req.query);
-  if(req.query.action === "create") {
-    console.log("create");
+app.get("/findUser", async (req, res) => {
+  const account = await collection.findOne({userID: req.query.user, password: req.query.password}, {projection: {_id: 0, password: 0}});
+  //update each port chart
+  if(account) {
+    let updates;
+    const params = [
+      ["5Min", 0, "day"],
+      ["1Hour", 7, "week"],
+      ["1Day", 1, "month"],
+      ["1Day", 3, "month3"],
+      ["1Day", 6, "month6"],
+      ["1Day", 12, "year"],
+    ];
+    for(const p of params) {
+      const response = await chartFunc.getPortData(p[0], p[1], account);
+      account.charts[p[2]] = response[1];
+      if(p[2] === "day")
+        updates = response[0];
+    }
+    updates["$set"]["charts"] = account.charts;
+    await collection.updateOne({userID: req.query.user}, updates);
   }
-  else if(req.query.action === "read") {
-    const account = await collection.findOne({userID: req.query.user}, {projection: {_id: 0}});
+  res.send({data: account});
+});
+
+app.get("/accountInit", async (req, res) => {
+  //ensure username does not already exist
+  const check = await collection.findOne({userID: req.query.user});
+  if(check)
+    res.send({data: false});
+  else {
+    const startVal = 100000;
+    const defaultWL = ["SPY", "AAPL", "NVDA"];
+    const account = {
+      userID: req.query.user,
+      password: req.query.password,
+      accountValue: startVal,
+      buyingPower: startVal,
+      wl: defaultWL,
+      owned: {},
+      subs: defaultWL,
+      charts: {},
+      lastLogin: ""
+    };
+
+    //initialize charts
+    const params = [
+      ["5Min", 0, "day"],
+      ["1Hour", 7, "week"],
+      ["1Day", 1, "month"],
+      ["1Day", 3, "month3"],
+      ["1Day", 6, "month6"],
+      ["1Day", 12, "year"],
+    ];
+    for(const p of params) {
+      const data = await chartFunc.getData(p[0], p[1], "NVDA");
+      for(const i in data[0])
+        data[1][i] = account.accountValue;
+      account.charts[p[2]] = data;
+    }
+    await collection.insertOne(account);
     res.send({data: account});
   }
-  else if(req.query.action === "delete") {
-    console.log("delete");
-  }
-  else
-    res.send({m: "Invalid"});
 });
 
 app.get("/watchlist", async (req, res) => {
-  const account = await collection.findOne({userID: req.query.user}, {projection: {_id: 0}});
+  const account = await collection.findOne({userID: req.query.user}, {projection: {_id: 0, password: 0}});
   if(account) {
     const changeData = await JSON.parse(req.query.change);
     const wl = account.wl;
@@ -285,7 +269,7 @@ app.get("/watchlist", async (req, res) => {
 });
 
 app.get("/owned", async (req, res) => {
-  const account = await collection.findOne({userID: req.query.user}, {projection: {_id: 0}});
+  const account = await collection.findOne({userID: req.query.user}, {projection: {_id: 0, password: 0}});
   if(account) {
     const changeData = await JSON.parse(req.query.change);
     const owned = account.owned;
@@ -320,7 +304,7 @@ app.get("/owned", async (req, res) => {
 });
 
 app.get("/updatePortChart", async (req, res) => {
-  const account = await collection.findOne({userID: req.query.user}, {projection: {_id: 0}});
+  const account = await collection.findOne({userID: req.query.user}, {projection: {_id: 0, password: 0}});
   if(account) {
     const charts = account.charts;
     const xData = await JSON.parse(req.query.xData), yData = await JSON.parse(req.query.yData);
@@ -339,30 +323,6 @@ app.get("/updateLogin", async (req, res) => {
   const updates = {$set: {lastLogin: req.query.date}};
   const result = await collection.updateOne({userID: req.query.user}, updates);
   res.send({data: result});
-});
-
-app.get("/accountInit", async (req, res) => {
-  const account = await collection.findOne({userID: "test"}, {projection: {_id: 0}});
-  const charts = account.charts;
-  const startVal = 100000;
-  const arr = ["SPY", "AMD", "AAPL"];
-  const params = [
-    ["5Min", 0, "day"],
-    ["1Hour", 7, "week"],
-    ["1Day", 1, "month"],
-    ["1Day", 3, "month3"],
-    ["1Day", 6, "month6"],
-    ["1Day", 12, "year"],
-  ];
-  for(const p of params) {
-    const data = await chartFunc.getData(p[0], p[1], "NVDA");
-    for(const i in data[0])
-      data[1][i] = account.accountValue;
-    charts[p[2]] = data;
-  }
-  const updates = {$set: {charts: charts, buyingPower: startVal, accountValue: startVal, wl: arr, subs: arr, owned: {}}};
-  const result = await collection.updateOne({userID: "test"}, updates);
-  res.send({data: result})
 });
 
 app.get("/tickers", async (req, res) => {
@@ -397,41 +357,9 @@ app.get("/tickers", async (req, res) => {
   }
 });
 
-app.get("/createAccount", async (req, res) => {});
-
-app.get("/validateLogin", (req, res) => {});
-
 app.get("/temp", async (req, res) => {
-  const account = await collection.findOne({userID: "test"}, {projection: {_id: 0}});
-  const charts = account.charts;
-  const params = [
-    ["1Hour", 7, "week"],
-    ["1Day", 1, "month"],
-    ["1Day", 3, "month3"],
-    ["1Day", 6, "month6"],
-    ["1Day", 12, "year"],
-  ];
-  for(const p of params) {
-    const data = await chartFunc.getData(p[0], p[1], "NVDA");
-    for(const i in data[0])
-      data[1][i] = 100000;
-    if(p[2] === "week") {
-      data[0].splice(data[0].length - 4, 4);
-      data[1].splice(data[1].length - 4, 4);
-    }
-    charts[p[2]] = data;
-  }
-  const updates = {$set: {charts: charts}};
-  const result = await collection.updateOne({userID: "test"}, updates);
-  res.send({data: result});
-  /*const a = await collection.find({}, {projection: {_id: 0}}).toArray();
-  console.log(a);
-  res.send({data: 0});*/
-});
-
-app.get("/hours", (req, res) => {
-  const now = new Date();
-  res.send({data: now.getHours()});
+  const result = await collection.deleteOne({userID: req.query.user});
+  res.send(result);
 });
 
 // use dynamically set PORT value (or 5000 if PORT is not set)
