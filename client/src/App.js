@@ -241,7 +241,7 @@ function App() {
   }
 
   const autoLogin = async () => {
-    const options = {methog: "GET", credentials: "include"};
+    const options = {method: "GET", credentials: "include"};
     const response = await fetch(`${process.env.REACT_APP_EXPRESS_URL}autologin`, options);
     if(response.status === 200) {
       const res = await response.json();
