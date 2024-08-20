@@ -231,8 +231,8 @@ function App() {
   }
 
   const logout = async () => {
-    const options = {method: "GET", credentials: "include"};
-    await fetch(`${process.env.REACT_APP_EXPRESS_URL}logout`, options)
+    //const options = {method: "GET", credentials: "include"};
+    //await fetch(`${process.env.REACT_APP_EXPRESS_URL}logout`, options)
     account = undefined;
     [wl, owned, ownedList, subs] = [[], {}, [], []];
     setTickers([]);
