@@ -9,7 +9,7 @@ require("dotenv").config();
 const app = express();
 require("express-ws")(app);
 
-const whitelist = ["https://paper-rh.vercel.app/"];
+const whitelist = ["https://paper-rh.vercel.app"];
 const corsOps = {
   origin: function (origin, callback) {
     if(whitelist.indexOf(origin) !== -1)
