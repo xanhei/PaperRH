@@ -14,7 +14,7 @@ const corsOps = {
   credentials:true,
   optionSuccessStatus:200,
 };
-app.use(cors());
+app.use(cors(corsOps));
 app.use(cookieParser());
 
 //initialize db connection
