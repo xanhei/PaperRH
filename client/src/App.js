@@ -51,12 +51,6 @@ function App() {
   const [tickers, setTickers] = useState([]); //used for dropdown search menu
   const [names, setNames] = useState([]); //used for dropdown search menu
 
-  const doSmth = async () => {
-    const response = await fetch("/temp?user=abc");
-    const res = await response.json();
-    console.log(res.data);
-  }
-
   //unhover listener (couldn't find out how to import correctly)
   const unHover = {
     id: "unHover",
@@ -300,7 +294,6 @@ function App() {
             </div>
             <hr className="line"></hr>
             {portView ? <h3>Buying Power: ${commaFormat(buyPower)}</h3> : <h3>Shares: {owned[searchTerm] || 0}</h3>}
-            <button onClick={() => doSmth()}>Click</button>
           </div>
           <div className="SidePanel">
             {

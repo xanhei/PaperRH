@@ -394,11 +394,6 @@ app.get("/tickers", async (req, res) => {
   }
 });
 
-app.get("/temp", async (req, res) => {
-  const result = await collection.deleteOne({userID: req.query.user});
-  res.send({data: result});
-});
-
 // use dynamically set PORT value (or 5000 if PORT is not set)
 const port = process.env.PORT || 5000;
 connect();
