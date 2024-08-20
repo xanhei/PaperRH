@@ -12,6 +12,11 @@ const LoginScreen = (props) => {
     if(!res !== "")
       setAlert(res);
   }
+  const enterCheck = (event) => {
+    if(event.key === "Enter")
+      loginCheck();
+  }
+
   return (
     <div className="loginPage">
       <h1>Paper RH (Demo Project)</h1>
@@ -22,8 +27,8 @@ const LoginScreen = (props) => {
       <p className="disclaimer">Username and password do not have to be complicated</p>
       <div className="userPass">
         {alert !== "" ? <p className="loginError">Error: {alert}</p> : <></>}
-        <input id="u" className="userPassInput" placeholder="Username" autoComplete="off"></input>
-        <input id="p" className="userPassInput" type="password" placeholder="Password"></input>
+        <input id="u" className="userPassInput" placeholder="Username" autoComplete="off" onKeyDown={(event) => enterCheck(event)}></input>
+        <input id="p" className="userPassInput" type="password" placeholder="Password" onKeyDown={(event) => enterCheck(event)}></input>
         <button style={{cursor: "pointer"}} onClick={() => loginCheck()}>{phrases[(phraseIndex + 1) % 2][1]}</button>
       </div>
     </div>

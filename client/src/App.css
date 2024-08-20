@@ -74,7 +74,7 @@ html {
   width: 4%;
   min-width: 65px;
   font-size: small;
-  
+  cursor: pointer;
 }
 
 .dropdown {
@@ -372,8 +372,8 @@ input[type="number"]::-webkit-inner-spin-button {
     font-size: 5vw;
   }
   .search {
-    margin-right: 10%;
-    width: 73%;
+    margin-right: 15%;
+    width: 68.5%;
   }
   .searchIcon {
     left: 18%;
@@ -381,7 +381,7 @@ input[type="number"]::-webkit-inner-spin-button {
   .logout {
     right: 1%;
     width: 8%;
-    min-width: 0px;
+    min-width: 40px;
   }
   .main {
     flex-direction: column;

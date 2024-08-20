@@ -80,20 +80,6 @@ export const review = (amount, mult, buy, dollars, bp, stake) => {
   }
 }
 
-//run getPortData for each chartType on login
-/*export const loginUpdate = (account) => {
-  const params = [
-    ["5Min", 0],
-    ["1Hour", 7],
-    ["1Day", 1],
-    ["1Day", 3],
-    ["1Day", 6],
-    ["1Day", 12],
-  ];
-  for(const arr of params)
-    getPortData(arr[0], arr[1], account);
-}*/
-
 //
 export const formatDailyChart = (xData) => {
   const now = new Date();

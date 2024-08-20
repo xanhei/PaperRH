@@ -1,4 +1,5 @@
 require('dotenv').config();
+const jwt = require("jsonwebtoken");
 
 const fetchOptions = {
   method: 'GET',
@@ -294,8 +295,47 @@ const getPortData = async (timeframe, goBack, account) => {
   return [updates, [compX, yData]];
 }
 
+const updateEachChart = async (account) => {
+  let updates;
+  const charts = account.charts;
+  const params = [
+    ["5Min", 0, "day"],
+    ["1Hour", 7, "week"],
+    ["1Day", 1, "month"],
+    ["1Day", 3, "month3"],
+    ["1Day", 6, "month6"],
+    ["1Day", 12, "year"],
+  ];
+  for(const p of params) {
+    const response = await getPortData(p[0], p[1], account);
+    charts[p[2]] = response[1];
+    if(p[2] === "day")
+      updates = response[0];
+  }
+  updates["$set"]["charts"] = charts;
+  return [updates, charts];
+}
+
+//used for persistent login
+const issueAuthToken = async (account) => {
+  const payload = {_id: account._id, userID: account.userID};
+  const secret = process.env.JWT_SECRET;
+  const options = {expiresIn: "1h"};
+
+  const token = await jwt.sign(payload, secret, options);
+  return token;
+}
+
+const issueAuthCookie = (res, token) => {
+  const cookieOptions = {httpOnly: true, maxAge: 1000 * 60 * 60, sameSite: "strict", secure: true};
+  res.cookie("authToken", token, cookieOptions);
+}
+
 exports.getData = getData;
 exports.percentChange = percentChange;
 exports.findOpen = findOpen;
 exports.getPortData = getPortData;
+exports.updateEachChart = updateEachChart;
+exports.issueAuthToken = issueAuthToken;
+exports.issueAuthCookie = issueAuthCookie;
 exports.fetchOptions = fetchOptions;

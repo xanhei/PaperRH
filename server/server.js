@@ -3,6 +3,8 @@ const chartFunc = require("./auxFunctions/api.js");
 const cors = require('cors');
 const WebSocket = require("ws");
 const bcrypt = require("bcryptjs");
+const cookieParser = require("cookie-parser");
+const jwt = require("jsonwebtoken");
 require("dotenv").config();
 const app = express();
 require("express-ws")(app);
@@ -13,6 +15,7 @@ const corsOps = {
   optionSuccessStatus:200,
 };
 app.use(cors(corsOps));
+app.use(cookieParser());
 
 //initialize db connection
 const {MongoClient, ServerApiVersion} = require("mongodb");
@@ -53,6 +56,14 @@ app.get("/", (req, res) => {
 
 app.get("/api", async (req, res) => {
   res.send("In API directory");
+});
+
+app.get("/dashboard", (req, res) => {
+  if(!loggedIn)
+    res.send({});
+  else {
+    res.send({data: "loggedIn"});
+  }
 });
 
 //historical stock data (15min delay)
@@ -173,30 +184,41 @@ app.get("/prevOpen", async (req, res) => {
 });
 
 //handle CRUD for users database
-app.get("/findUser", async (req, res) => {
-  const account = await collection.findOne({userID: req.query.user}, {projection: {_id: 0}});
-  //update each port chart
-  if(account && bcrypt.compareSync(req.query.password, account.password)) {
-    delete account.password;
-    let updates;
-    const params = [
-      ["5Min", 0, "day"],
-      ["1Hour", 7, "week"],
-      ["1Day", 1, "month"],
-      ["1Day", 3, "month3"],
-      ["1Day", 6, "month6"],
-      ["1Day", 12, "year"],
-    ];
-    for(const p of params) {
-      const response = await chartFunc.getPortData(p[0], p[1], account);
-      account.charts[p[2]] = response[1];
-      if(p[2] === "day")
-        updates = response[0];
-    }
-    updates["$set"]["charts"] = account.charts;
-    await collection.updateOne({userID: req.query.user}, updates);
+app.get("/autoLogin", async (req, res) => {
+  if(!req.headers.cookie || req.headers.cookie === null) {
+    return res.status(401);
   }
-  res.send({data: account});
+  try {
+    const cookie = req.headers.cookie.substring(10);
+    const response = await jwt.verify(cookie, process.env.JWT_SECRET);
+    const account = await collection.findOne({userID: response.userID}, {projection: {_id: 0, password: 0}});
+
+    let updates;
+    [updates, account.charts] = await chartFunc.updateEachChart(account);
+    await collection.updateOne({userID: account.userID}, updates);
+
+    res.status(200).send(account);
+  } catch(error) {
+    console.log(error);
+    res.status(401);
+  }
+});
+
+app.get("/findUser", async (req, res) => {
+  const account = await collection.findOne({userID: req.query.user});
+  if(account && bcrypt.compareSync(req.query.password, account.password)) {
+    const authToken = await chartFunc.issueAuthToken(account);
+    chartFunc.issueAuthCookie(res, authToken);
+    delete account.password; //only deleting password from object that is sent to client (not from database)
+    delete account._id;
+
+    let updates;
+    [updates, account.charts] = await chartFunc.updateEachChart(account);
+    await collection.updateOne({userID: req.query.user}, updates);
+    res.send({data: account});
+  }
+  else
+    res.send({data: false});
 });
 
 app.get("/accountInit", async (req, res) => {
@@ -236,9 +258,20 @@ app.get("/accountInit", async (req, res) => {
         data[1][i] = account.accountValue;
       account.charts[p[2]] = data;
     }
-    await collection.insertOne(account);
+    const temp = await collection.insertOne(account);
+    account._id = temp.insertedId;
+    const authToken = await chartFunc.issueAuthToken(account);
+    chartFunc.issueAuthCookie(res, authToken);
+
+    delete account.password;
+    delete account._id;
     res.send({data: account});
   }
+});
+
+app.get("/logout", (req, res) => {
+  res.clearCookie("authToken");
+  res.status(200).send({});
 });
 
 app.get("/watchlist", async (req, res) => {

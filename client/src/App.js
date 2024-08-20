@@ -25,6 +25,7 @@ const url = "https://data.alpaca.markets/v2/stocks/bars";
 const params = "?sort=asc";
 let ws;
 let focus = ""; //used for case where exchange of stock occurs when user does not have that stock in focus (state is not updated in the handler function)
+let tempColor; //used because chartSubHeader function runs before chartSubHead element loads
 
 //test parameters to be changed later
 const defaultSearch = "SPY";
@@ -114,6 +115,7 @@ function App() {
           bp = yData[0];
       }
       const color = yData[yData.length - 1] >= bp ? "rgb(31, 217, 22)" : "rgb(242, 80, 5)";
+      tempColor = color;
       setBasePrice(bp);
       setCurrPrice(commaFormat(yData[yData.length - 1]));
       setShowPrice(commaFormat(yData[yData.length - 1]));
@@ -234,13 +236,30 @@ function App() {
     return "";
   }
 
-  const logout = () => {
+  const logout = async () => {
+    const options = {method: "GET", credentials: "include"};
+    await fetch(`${process.env.REACT_APP_EXPRESS_URL}logout`, options)
     account = undefined;
     [wl, owned, ownedList, subs] = [[], {}, [], []];
     setTickers([]);
     setChartData(undefined);
     setLoggedIn(false);
   }
+
+  const autoLogin = async () => {
+    const options = {methog: "GET", credentials: "include"};
+    const response = await fetch(`${process.env.REACT_APP_EXPRESS_URL}autologin`, options);
+    if(response.status === 200) {
+      const res = await response.json();
+      account = res;
+      [wl, subs, owned] = [account.wl, account.subs, account.owned];
+      ownedList = Object.keys(owned);
+      setBuyPower(account.buyingPower);
+      setLoggedIn(true);
+    }
+  }
+
+  useEffect(() => {autoLogin()}, []);
 
   return (
     <>{ !loggedIn ? <LoginScreen login={(user, pass, newAcct) => loginCheck(user, pass, newAcct)}></LoginScreen> :
@@ -266,9 +285,7 @@ function App() {
             {
               chartData !== undefined ?
               <>
-              {
-                basePrice ? <p className="chartSubHead">{chartSubHeader(basePrice, showPrice ? showPrice : currPrice)}</p> : <></>
-              }
+                {basePrice ? <p className="chartSubHead" style={{color: tempColor}}>{chartSubHeader(basePrice, showPrice ? showPrice : currPrice)}</p> : <p></p>}
                 <LineChart name="portChart" stock={searchTerm} chartData={chartData.data} options={ops} plugins={[verticalHoverLine, unHover]}></LineChart>
               </> :
               <h2>Chart data not found for ${searchTerm}</h2>
