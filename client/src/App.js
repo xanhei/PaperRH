@@ -240,7 +240,7 @@ function App() {
     setLoggedIn(false);
   }
 
-  const autoLogin = async () => {
+  /*const autoLogin = async () => {
     const options = {method: "GET", credentials: "include"};
     const response = await fetch(`${process.env.REACT_APP_EXPRESS_URL}autologin`, options);
     if(response.status === 200) {
@@ -253,7 +253,7 @@ function App() {
     }
   }
 
-  useEffect(() => {autoLogin()}, []);
+  useEffect(() => {autoLogin()}, []);*/
 
   return (
     <>{ !loggedIn ? <LoginScreen login={(user, pass, newAcct) => loginCheck(user, pass, newAcct)}></LoginScreen> :

@@ -9,7 +9,7 @@ require("dotenv").config();
 const app = express();
 require("express-ws")(app);
 
-const whitelist = ["https://paper-rh.vercel.app"];
+const whitelist = ["https://paper-rh.vercel.app", "https://paperrh.onrender.com"];
 const corsOps = {
   origin: function (origin, callback) {
     if(whitelist.indexOf(origin) !== -1)
@@ -20,7 +20,7 @@ const corsOps = {
   credentials:true,
   optionSuccessStatus:200,
 };
-app.use(cors(corsOps));
+app.use(cors());
 app.use(cookieParser());
 
 //initialize db connection
@@ -190,7 +190,7 @@ app.get("/prevOpen", async (req, res) => {
 });
 
 //handle CRUD for users database
-app.get("/autoLogin", async (req, res) => {
+/*app.get("/autoLogin", async (req, res) => {
   if(!req.headers.cookie || req.headers.cookie === null) {
     return res.status(401);
   }
@@ -208,13 +208,13 @@ app.get("/autoLogin", async (req, res) => {
     console.log(error);
     res.status(401);
   }
-});
+});*/
 
 app.get("/findUser", async (req, res) => {
   const account = await collection.findOne({userID: req.query.user});
   if(account && bcrypt.compareSync(req.query.password, account.password)) {
-    const authToken = await chartFunc.issueAuthToken(account);
-    chartFunc.issueAuthCookie(res, authToken);
+    //const authToken = await chartFunc.issueAuthToken(account);
+    //chartFunc.issueAuthCookie(res, authToken);
     delete account.password; //only deleting password from object that is sent to client (not from database)
     delete account._id;
 
@@ -266,8 +266,8 @@ app.get("/accountInit", async (req, res) => {
     }
     const temp = await collection.insertOne(account);
     account._id = temp.insertedId;
-    const authToken = await chartFunc.issueAuthToken(account);
-    chartFunc.issueAuthCookie(res, authToken);
+    //const authToken = await chartFunc.issueAuthToken(account);
+    //chartFunc.issueAuthCookie(res, authToken);
 
     delete account.password;
     delete account._id;
@@ -275,10 +275,10 @@ app.get("/accountInit", async (req, res) => {
   }
 });
 
-app.get("/logout", (req, res) => {
+/*app.get("/logout", (req, res) => {
   res.clearCookie("authToken");
   res.status(200).send({});
-});
+});*/
 
 app.get("/watchlist", async (req, res) => {
   const account = await collection.findOne({userID: req.query.user}, {projection: {_id: 0, password: 0}});
