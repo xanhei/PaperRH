@@ -77,8 +77,8 @@ const Exchange = (props) => {
           const temp = await findPrice();
           if(temp.stock !== props.stock)
             continue;
-          if(temp.length > 0)
-            mult = temp[Math.floor(temp.length / 2)];
+          if(temp.price.length > 0)
+            mult = temp.price[Math.floor(temp.length / 2)];
           else {
             alert("Unable to place order right now");
             return;
