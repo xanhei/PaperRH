@@ -36,6 +36,7 @@ let ownedList = []; //because if you try to use Object.keys, react freaks out an
 let tempSub = ""; //used to correctly unsub from a stock when user unloads while on individual stock screen that is not in subs list
 let account;
 let menuTimeout; //prevent unnecessary queries to polygon.io api (for menu dropdown tickers)
+let buyPowerRef = 100000; //used to make sure buy/sell correctly updates correctly (when 2+ transactions are pending)
 
 function App() {
   const [chartData, setChartData] = useState(); //data drawn on chart
@@ -172,10 +173,11 @@ function App() {
   }
 
   const updatePort = (shares, price, buy, stock) => {
+    console.log(stock, buy);
     if(buy) {
-      const bp = Number((Number(buyPower) - shares * price).toFixed(2));
-      setBuyPower(bp);
-      fetch(`${process.env.REACT_APP_EXPRESS_URL}owned?user=${account.userID}&action=add&change=${JSON.stringify([[stock, shares]])}&bp=${JSON.stringify(bp)}`);
+      buyPowerRef = Number((Number(buyPowerRef) - shares * price).toFixed(2));
+      setBuyPower(buyPowerRef);
+      fetch(`${process.env.REACT_APP_EXPRESS_URL}owned?user=${account.userID}&action=add&change=${JSON.stringify([[stock, shares]])}&bp=${buyPowerRef}`);
       if(owned[stock] === undefined) {
         owned[stock] = shares;
         ownedList.push(stock);
@@ -189,10 +191,10 @@ function App() {
         owned[stock] += shares;
     }
     else {
-      const bp = Number((Number(buyPower) + shares * price).toFixed(2));
-      setBuyPower(bp);
+      buyPowerRef = Number((Number(buyPowerRef) + shares * price).toFixed(2));
+      setBuyPower(buyPowerRef);
       owned[stock] -= shares;
-      fetch(`${process.env.REACT_APP_EXPRESS_URL}owned?user=${account.userID}&action=remove&change=${JSON.stringify([[stock, shares]])}&bp=${bp}`);
+      fetch(`${process.env.REACT_APP_EXPRESS_URL}owned?user=${account.userID}&action=remove&change=${JSON.stringify([[stock, shares]])}&bp=${buyPowerRef}`);
       if(owned[stock] === 0) {
         delete owned[stock];
         ownedList.splice(ownedList.indexOf(stock), 1);
@@ -225,7 +227,8 @@ function App() {
     }
     [wl, subs, owned] = [account.wl, account.subs, account.owned];
     ownedList = Object.keys(owned);
-    setBuyPower(account.buyingPower);
+    buyPowerRef = account.buyingPower;
+    setBuyPower(buyPowerRef);
     setLoggedIn(true);
     return "";
   }
@@ -248,7 +251,8 @@ function App() {
       account = res;
       [wl, subs, owned] = [account.wl, account.subs, account.owned];
       ownedList = Object.keys(owned);
-      setBuyPower(account.buyingPower);
+      buyPowerRef = account.buyingPower;
+      setBuyPower(buyPowerRef);
       setLoggedIn(true);
     }
   }

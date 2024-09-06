@@ -70,7 +70,7 @@ const findOpen = async (startDate, endDate, percent = false) => {
   const today = new Date();
   if(!res || !res[res.length - 1])
     return;
-  const wait = (today.toISOString().substring(0, 10) === res[res.length - 1].date && (today.getHours() < 9 || today.getHours() === 9 && today.getMinutes() < 30));
+  const wait = (today.toISOString().substring(0, 10) === res[res.length - 1].date && (today.getHours() < 4));//(today.getHours() < 9 || today.getHours() === 9 && today.getMinutes() < 30));
   const i = percent ? 1 : 0;
   return wait ? res[res.length - 2 - i].date : res[res.length - 1 - i].date;
 }
