@@ -32,9 +32,9 @@ export const commaFormat = (num) => {
 }
 
 //display percent change of a stock's value in given time frame
-export const percentFormat = (base, curr) => {
+export const percentFormat = (base, curr, sign) => {
   let res = ((curr - base) / base * 100).toFixed(2);
-  if(res >= 0)
+  if(sign)
     res = "+" + res;
   return res;
 }
@@ -44,8 +44,7 @@ export const chartSubHeader = (base, curr) => {
   curr = curr.replaceAll(',', '');
   curr = Number(curr);
   let price = (curr - base).toFixed(2);
-  let percent = percentFormat(base, curr);
-  percent = percent.substring(percent.length - 4); //resolve error where price change is negative, but rounded percent change is 0.00
+  let percent = percentFormat(base, curr, price >= 0);
   if(document.querySelector(".chartSubHead"))
     document.querySelector(".chartSubHead").style.color = price >= 0 ? "rgb(31, 217, 22)" : "rgb(242, 80, 5)";
   return `${price >= 0 ? `+$${commaFormat(price)}` : `-$${(-price).toFixed(2)}`} (${commaFormat(percent)}%)`;
