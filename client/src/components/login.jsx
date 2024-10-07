@@ -29,7 +29,6 @@ const LoginScreen = (props) => {
         <p>{phrases[phraseIndex][0]}</p>
         <button className="switchLoginMethod" onClick={() => setPhraseIndex(prev => (prev + 1) % 2)}>{phrases[phraseIndex][1]}</button>
       </div>
-      <p className="disclaimer">Username and password do not have to be complicated</p>
       <div className="userPass">
         {alert !== "" ? <p className="loginError" style={{borderColor: boxColor}}>{alert}</p> : <></>}
         <input id="u" className="userPassInput" placeholder="Username" autoComplete="off" onKeyDown={(event) => enterCheck(event)}></input>

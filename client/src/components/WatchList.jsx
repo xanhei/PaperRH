@@ -53,18 +53,19 @@ const WatchList = (props) => {
       }
       setBasePrices(bp);
     }
-    let per = [];
+    let percentArr = [];
     const use = bp.length === 0 ? basePrices : bp; //not my best work :(
     for(let i = 0; i < props.stocks.length; i++) {
-      let curr = percentFormat(use[i], chartList[i].data.datasets[0].data[chartList[i].data.datasets[0].data.length - 1]);
-      const color = curr[0] === "+" ? "rgb(31, 217, 22)" : "rgb(242, 80, 5)";
+      const base = use[i], curr = chartList[i].data.datasets[0].data[chartList[i].data.datasets[0].data.length - 1]
+      let currPer = percentFormat(base, curr, curr - base >= 0);
+      const color = currPer[0] === "+" ? "rgb(31, 217, 22)" : "rgb(242, 80, 5)";
       const focusElement = document.querySelector(`.percent#${props.stocks[i]}[list='${props.title}']`);
       if(focusElement)
         focusElement.style.color = color;
       changeColor(ChartJS.getChart(document.querySelector(`.wlChart[stock='${props.stocks[i]}'][list='${props.title}']`)), color)
-      per.push(curr);
+      percentArr.push(currPer);
     }
-    setPercents(per);
+    setPercents(percentArr);
   }
   
   useEffect(() => {getList()}, [props.stocks]);

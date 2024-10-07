@@ -120,7 +120,7 @@ app.get("/quotes", async (req, res) => {
     const response = await fetch(url, chartFunc.fetchOptions);
     const data = await response.json();
     if(!data.is_open)
-      res.send({stock: req.query.stock, arr: []});
+      res.send({stock: req.query.stock, arr: ["Price unavailable"]});
     else {
       //sub/unsub functions
       const checkSub = () => {
