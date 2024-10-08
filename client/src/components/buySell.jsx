@@ -24,6 +24,19 @@ const Exchange = (props) => {
     return {stock: res.stock, price: undefined};
   }
 
+  const findMktPrice = () => {
+    if(quotesArr.length === 0)
+      return "Loading...";
+    if(quotesArr[0] < 0)
+      return "Unavailable";
+    return "$" + quotesArr[Math.floor(quotesArr.length / 2)];;
+  }
+
+  const findExVal = () => {
+    const val = quotesArr[Math.floor(quotesArr.length / 2)];
+    return (quotesArr.length === 0 || val < 0) ? props.marketPrice.replaceAll(',', '') : val;
+  }
+
   useEffect(() => setEditIndex(props.contains ? 1 : 0), [props.stock]); //ensures editPhrase is correct when new stock is searched from individual stock view
   useEffect(() => {setQuotesArr([]); findPrice()}, [props.stock]);
   return (
@@ -55,12 +68,11 @@ const Exchange = (props) => {
         </div>
         <div className="exchangeSection">
           <p>Market Price</p>
-          <p className="exchangeNum">{quotesArr.length > 0 ? "$" + commaFormat(quotesArr[Math.floor(quotesArr.length / 2)]) : "Loading..."}</p>
+          <p className="exchangeNum">{findMktPrice()}</p>
         </div>
         <div className="exchangeSection">
           <p>Estimated Cost</p>
-          <p className="exchangeNum">${commaFormat(sd === "Shares" ? ((quotesArr.length > 0 ?
-                                       quotesArr[Math.floor(quotesArr.length / 2)] : props.marketPrice.replaceAll(',', '')) * inputVal) : inputVal)}</p>
+          <p className="exchangeNum">${commaFormat(sd === "Shares" ? (findExVal() * inputVal) : inputVal)}</p>
         </div>
         <p className="disclaimer">**Price may differ when order is submitted**</p>
       </div>
