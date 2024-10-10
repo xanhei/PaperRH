@@ -11,30 +11,25 @@ const Exchange = (props) => {
   const [placeholder, setPlaceholder] = useState(0); //placeholder amount to be bought/sold
   const [editIndex, setEditIndex] = useState(props.contains ? 1 : 0); //used for changing watchlist (see line 5)
   const [inputVal, setInputVal] = useState(0);
+  const [mktPrice, setMktPrice] = useState("Loading...");
+  const [exMult, setExMult] = useState(props.marketPrice.replaceAll(',', ''));
   const [quotesArr, setQuotesArr] = useState([]);
   const [openQuery, setOpenQuery] = useState({});
   
   const findPrice = async () => {
     const response = await fetch(`${process.env.REACT_APP_EXPRESS_URL}quotes?stock=${props.stock}`);
     const res = await response.json();
-    if(res.stock === document.querySelector(".portChart").getAttribute("stock"))
+    if(res.stock === document.querySelector(".portChart").getAttribute("stock")) {
       setQuotesArr(res.arr);
-    if(res.arr.length > 0)
-      return {stock: res.stock, price: res.arr[Math.floor(res.arr.length / 2)]};
-    return {stock: res.stock, price: undefined};
-  }
-
-  const findMktPrice = () => {
-    if(quotesArr.length === 0)
-      return "Loading...";
-    if(quotesArr[0] < 0)
-      return "Unavailable";
-    return "$" + quotesArr[Math.floor(quotesArr.length / 2)];;
-  }
-
-  const findExVal = () => {
-    const val = quotesArr[Math.floor(quotesArr.length / 2)];
-    return (quotesArr.length === 0 || val < 0) ? props.marketPrice.replaceAll(',', '') : val;
+      if(res.arr[0] === -1)
+        setMktPrice("Unavailable");
+      else {
+        const newPrice = res.arr[Math.floor(res.arr.length / 2)];
+        setMktPrice("$" + commaFormat(newPrice));
+        setExMult(newPrice);
+      }
+    }
+    return {stock: res.stock, price: res.arr[Math.floor(res.arr.length / 2)]};
   }
 
   useEffect(() => setEditIndex(props.contains ? 1 : 0), [props.stock]); //ensures editPhrase is correct when new stock is searched from individual stock view
@@ -68,11 +63,11 @@ const Exchange = (props) => {
         </div>
         <div className="exchangeSection">
           <p>Market Price</p>
-          <p className="exchangeNum">{findMktPrice()}</p>
+          <p className="exchangeNum">{mktPrice}</p>
         </div>
         <div className="exchangeSection">
           <p>Estimated Cost</p>
-          <p className="exchangeNum">${commaFormat(sd === "Shares" ? (findExVal() * inputVal) : inputVal)}</p>
+          <p className="exchangeNum">${commaFormat(sd === "Shares" ? (exMult * inputVal) : inputVal)}</p>
         </div>
         <p className="disclaimer">**Price may differ when order is submitted**</p>
       </div>
