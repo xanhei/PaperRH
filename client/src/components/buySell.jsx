@@ -12,9 +12,16 @@ const Exchange = (props) => {
   const [editIndex, setEditIndex] = useState(props.contains ? 1 : 0); //used for changing watchlist (see line 5)
   const [inputVal, setInputVal] = useState(0);
   const [mktPrice, setMktPrice] = useState("Loading...");
-  const [exMult, setExMult] = useState(props.marketPrice.replaceAll(',', ''));
   const [quotesArr, setQuotesArr] = useState([]);
-  const [openQuery, setOpenQuery] = useState({});
+  //const [openQuery, setOpenQuery] = useState({});
+
+  //ensures new stats do not rollover when searching for a new stock from individual stock view
+  const resetStats = () => {
+    console.log(props.marketPrice.replaceAll(',', ''));
+    setEditIndex(props.contains ? 1 : 0)
+    setMktPrice("Loading...");
+    setQuotesArr([]);
+  }
   
   const findPrice = async () => {
     const response = await fetch(`${process.env.REACT_APP_EXPRESS_URL}quotes?stock=${props.stock}`);
@@ -23,17 +30,13 @@ const Exchange = (props) => {
       setQuotesArr(res.arr);
       if(res.arr[0] === -1)
         setMktPrice("Unavailable");
-      else {
-        const newPrice = res.arr[Math.floor(res.arr.length / 2)];
-        setMktPrice("$" + commaFormat(newPrice));
-        setExMult(newPrice);
-      }
+      else
+        setMktPrice("$" + commaFormat(res.arr[Math.floor(res.arr.length / 2)]));
     }
     return {stock: res.stock, price: res.arr[Math.floor(res.arr.length / 2)]};
   }
 
-  useEffect(() => setEditIndex(props.contains ? 1 : 0), [props.stock]); //ensures editPhrase is correct when new stock is searched from individual stock view
-  useEffect(() => {setQuotesArr([]); findPrice()}, [props.stock]);
+  useEffect(() => {resetStats(); findPrice()}, [props.stock]);
   return (
     <>
       <div className="buySell">
@@ -67,7 +70,10 @@ const Exchange = (props) => {
         </div>
         <div className="exchangeSection">
           <p>Estimated Cost</p>
-          <p className="exchangeNum">${commaFormat(sd === "Shares" ? (exMult * inputVal) : inputVal)}</p>
+          <p className="exchangeNum">${
+            commaFormat(sd === "Shares" ? ((quotesArr.length > 0 && quotesArr[0] !== -1 ?
+            quotesArr[Math.floor(quotesArr.length / 2)] : props.marketPrice.replaceAll(',', '')) * inputVal) : inputVal)
+          }</p>
         </div>
         <p className="disclaimer">**Price may differ when order is submitted**</p>
       </div>
