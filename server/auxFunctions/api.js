@@ -107,17 +107,21 @@ const formatTime = (s, timeframe) => { //s --> 2024-01-01T00:00:00Z
   }
 }
 
-//formatting for bars that are less than a day (have to include close for last bar)
+//formatting for bars that are less than a day
+//filters out extra bars
+//formats close of last bar
 const ltdTimeFormat = (arr, isMinBar) => {
   let res = [];
+  const now = new Date();
   if(isMinBar) {
     //set i to make sure first bar for 1D is not the 8:00 PM bar for the last day
-    let i = (arr[0].t.substring(11,13) == "00") ? 1 : 0;
-    res.push(formatTime(arr[i++].t));
-    for(; i < arr.length; i++) {
-      if(arr[i].t.substring(0, 10) != arr[i - 1].t.substring(0, 10)) {
-        arr.splice(i);
-        break;
+    //let i = (arr[0].t.substring(11,13) == "00") ? 1 : 0;
+    //res.push(formatTime(arr[i++].t));
+    for(let i = 0; i < arr.length; i++) {
+      const dateCheck = new Date(arr[i].t);
+      if(now.getDate() !== dateCheck.getDate()) {
+        arr.splice(i--, 1);
+        continue;
       }
       res.push(formatTime(arr[i].t));
     }
@@ -133,13 +137,16 @@ const ltdTimeFormat = (arr, isMinBar) => {
   }
   else {
     for(let i = 0; i < arr.length; i++) {
-      if(arr[i].t.substring(11, 16) == "00:00")
-          continue;
+      const dateCheck = new Date(arr[i].t);
+      if(dateCheck.getHours() < 4 || dateCheck.getHours() > 20) {
+        arr.splice(i--, 1);
+        continue;
+      }
       res.push(formatTime(arr[i].t, "1Hour"));
-      if(arr[i].t.substring(11, 16) == "23:00") {
+      if(dateCheck.getHours() === 19) {
         let k = (Number(arr[i].t.substring(5, 7)) < 10) ? 6 : 5;
         let j = (Number(arr[i].t.substring(8, 10)) < 10) ? 9 : 8;
-        let prefix = `${arr[i].t.substring(k, 7)}-${arr[i].t.substring(j, 10)},`;
+        let prefix = `${dateCheck.getMonth() + 1}-${dateCheck.getDate()},`;
         res.push(`${prefix} 8:00 PM`);
       }
     }
