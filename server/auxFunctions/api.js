@@ -85,7 +85,6 @@ const formatTime = (s, timeframe) => { //s --> 2024-01-01T00:00:00Z
   else {
     let date = new Date(s);
     const timeString = date.toLocaleTimeString("en-US", {timeZone: "America/New_York"});
-    date = date.toDateString();
     let time, half;
     if(timeString[1] == ":") {
       time = timeString.substring(0, 4);
