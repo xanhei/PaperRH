@@ -149,7 +149,7 @@ const ltdPriceFormat = (arr, isMinBar) => {
     const now = new Date();
     for(let i = 0; i < arr.length; i++) {
       const dateCheck = new Date(arr[i].t);
-      if(now.getDate() !== dateCheck.getDate()) {
+      if(now.getDate() !== dateCheck.getDate())
         continue;
       res.push(Number(arr[i].o));
     }
