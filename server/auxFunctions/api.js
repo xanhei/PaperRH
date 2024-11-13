@@ -17,30 +17,37 @@ const getData = async (timeframe, goBack, term) => {
 
   //find correct start date
   let today = new Date();
-  let dateURL = new Date(
+  let checkDate = new Date(
     Number(today.getFullYear()),
-    (goBack != 7) ? Number(today.getMonth()) - goBack : Number(today.getMonth()),
-    (goBack == 7 || goBack == 0) ? Number(today.getDate()) - 7 : Number(today.getDate()),
+    (goBack !== 7) ? Number(today.getMonth()) - goBack : Number(today.getMonth()),
+    (goBack === 7 || goBack == 0) ? Number(today.getDate()) - 7 : Number(today.getDate()),
   );
-  dateURL = dateURL.toISOString();
+  dateURL = checkDate.toISOString();
   dateURL = dateURL.substring(0, 10);
-  if(goBack == 0)
+  if(goBack === 0)
     dateURL = await findOpen(dateURL, `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`);
   if(!dateURL)
     return [undefined, undefined];
   const response = await fetch(url + params + `&symbols=${term}` + `&timeframe=${timeframe}` + `&start=${dateURL}`, fetchOptions)
   const res = await response.json();
 
+  //set filter variable for daily/weekly charts
+  let baseDate;
+  if(goBack === 0)
+    baseDate = new Date(dateURL + "T12:00:00").getDate();
+  else if(goBack === 7)
+    baseDate = checkDate.getDate();
+
   //set chart data if response is ok
   if(res.bars && res.bars[term]) {
     let xData = await new Promise((resolve) => {
       resolve(
-        (timeframe === "1Day") ? res.bars[term].map((bar) => formatTime(bar.t, timeframe)) : ltdTimeFormat(res.bars[term], timeframe === "5Min")
+        (timeframe === "1Day") ? res.bars[term].map((bar) => formatTime(bar.t, timeframe)) : ltdTimeFormat(res.bars[term], baseDate, timeframe === "5Min")
       );
     });
     let yData = await new Promise((resolve) => {
       resolve(
-        (timeframe === "1Day") ? res.bars[term].map((bar) => Number(bar.c)) : ltdPriceFormat(res.bars[term], timeframe === "5Min")
+        (timeframe === "1Day") ? res.bars[term].map((bar) => Number(bar.c)) : ltdPriceFormat(res.bars[term], baseDate, timeframe === "5Min")
       );
     });
     return [xData, yData];
@@ -107,13 +114,12 @@ const formatTime = (s, timeframe) => { //s --> 2024-01-01T00:00:00Z
 //formatting for bars that are less than a day
 //filters out extra bars
 //formats close of last bar
-const ltdTimeFormat = (arr, isMinBar) => {
+const ltdTimeFormat = (arr, baseDate, isMinBar) => {
   let res = [];
   if(isMinBar) {
-    const now = new Date();
     for(let i = 0; i < arr.length; i++) {
       const dateCheck = new Date(arr[i].t);
-      if(now.getDate() !== dateCheck.getDate())
+      if(baseDate !== dateCheck.getDate())
         continue;
       res.push(formatTime(arr[i].t));
     }
@@ -130,7 +136,7 @@ const ltdTimeFormat = (arr, isMinBar) => {
   else {
     for(let i = 0; i < arr.length; i++) {
       const dateCheck = new Date(arr[i].t);
-      if(dateCheck.getHours() > 19)
+      if(dateCheck.getHours() > 19 || dateCheck.getDate() < baseDate)
         continue;
       res.push(formatTime(arr[i].t, "1Hour"));
       if(dateCheck.getHours() === 19) {
@@ -142,13 +148,12 @@ const ltdTimeFormat = (arr, isMinBar) => {
   return res;
 }
 
-const ltdPriceFormat = (arr, isMinBar) => {
+const ltdPriceFormat = (arr, baseDate, isMinBar) => {
   let res = [];
   if(isMinBar) {
-    const now = new Date();
     for(let i = 0; i < arr.length; i++) {
       const dateCheck = new Date(arr[i].t);
-      if(now.getDate() !== dateCheck.getDate())
+      if(baseDate !== dateCheck.getDate())
         continue;
       res.push(Number(arr[i].o));
     }
@@ -159,7 +164,7 @@ const ltdPriceFormat = (arr, isMinBar) => {
   else {
     for(let i = 0; i < arr.length; i++) {
       const dateCheck = new Date(arr[i].t);
-      if(dateCheck.getHours() > 19)
+      if(dateCheck.getHours() > 19 || dateCheck.getDate() < baseDate)
           continue;
       res.push(Number(arr[i].o));
       if(dateCheck.getHours() === 19)
