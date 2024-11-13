@@ -19,12 +19,12 @@ const getData = async (timeframe, goBack, term) => {
   let today = new Date();
   let checkDate = new Date(
     Number(today.getFullYear()),
-    (goBack !== 7) ? Number(today.getMonth()) - goBack : Number(today.getMonth()),
-    (goBack === 7 || goBack == 0) ? Number(today.getDate()) - 7 : Number(today.getDate()),
+    (goBack != 7) ? Number(today.getMonth()) - goBack : Number(today.getMonth()),
+    (goBack == 7 || goBack == 0) ? Number(today.getDate()) - 7 : Number(today.getDate()),
   );
   dateURL = checkDate.toISOString();
   dateURL = dateURL.substring(0, 10);
-  if(goBack === 0)
+  if(goBack == 0)
     dateURL = await findOpen(dateURL, `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`);
   if(!dateURL)
     return [undefined, undefined];
@@ -33,9 +33,9 @@ const getData = async (timeframe, goBack, term) => {
 
   //set filter variable for daily/weekly charts
   let baseDate;
-  if(goBack === 0)
+  if(goBack == 0)
     baseDate = new Date(dateURL + "T12:00:00").getDate();
-  else if(goBack === 7)
+  else if(goBack == 7)
     baseDate = checkDate.getDate();
 
   //set chart data if response is ok
