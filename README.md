@@ -1,6 +1,7 @@
 Link: https://paper-rh.vercel.app/
 
 This webapp functions as a paper-trading site that allows users to view stock data and buy/sell with paper money.
+
 ***Website Images***
 - **Portfolio view**
 ![ws1.JPG](https://github.com/xanhei/PaperRH/blob/main/images/ws1.JPG?raw=true)
