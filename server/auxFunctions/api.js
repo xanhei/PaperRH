@@ -34,9 +34,9 @@ const getData = async (timeframe, goBack, term) => {
   //set filter variable for daily/weekly charts
   let baseDate;
   if(goBack == 0)
-    baseDate = new Date(dateURL + "T12:00:00").getDate();
+    baseDate = new Date(dateURL + "T12:00:00");
   else if(goBack == 7)
-    baseDate = checkDate.getDate();
+    baseDate = checkDate;
 
   //set chart data if response is ok
   if(res.bars && res.bars[term]) {
@@ -119,7 +119,7 @@ const ltdTimeFormat = (arr, baseDate, isMinBar) => {
   if(isMinBar) {
     for(let i = 0; i < arr.length; i++) {
       const dateCheck = new Date(arr[i].t);
-      if(baseDate !== dateCheck.getDate())
+      if(baseDate.getDate() !== dateCheck.getDate())
         continue;
       res.push(formatTime(arr[i].t));
     }
@@ -136,7 +136,12 @@ const ltdTimeFormat = (arr, baseDate, isMinBar) => {
   else {
     for(let i = 0; i < arr.length; i++) {
       const dateCheck = new Date(arr[i].t);
-      if(dateCheck.getHours() > 19 || dateCheck.getDate() < baseDate)
+
+      const invalidDay = (dateCheck.getDate() < baseDate.getDate() && dateCheck.getMonth() === baseDate.getMonth());
+      const invalidMonth = (dateCheck.getMonth() < baseDate.getMonth() || (dateCheck.getMonth() === 11 && baseDate.getMonth === 0));
+      const invalidDate =  invalidDay || invalidMonth;
+
+      if(dateCheck.getHours() > 19 || invalidDate)
         continue;
       res.push(formatTime(arr[i].t, "1Hour"));
       if(dateCheck.getHours() === 19) {
@@ -153,7 +158,7 @@ const ltdPriceFormat = (arr, baseDate, isMinBar) => {
   if(isMinBar) {
     for(let i = 0; i < arr.length; i++) {
       const dateCheck = new Date(arr[i].t);
-      if(baseDate !== dateCheck.getDate())
+      if(baseDate.getDate() !== dateCheck.getDate())
         continue;
       res.push(Number(arr[i].o));
     }
@@ -164,7 +169,12 @@ const ltdPriceFormat = (arr, baseDate, isMinBar) => {
   else {
     for(let i = 0; i < arr.length; i++) {
       const dateCheck = new Date(arr[i].t);
-      if(dateCheck.getHours() > 19 || dateCheck.getDate() < baseDate)
+
+      const invalidDay = (dateCheck.getDate() < baseDate.getDate() && dateCheck.getMonth() === baseDate.getMonth());
+      const invalidMonth = (dateCheck.getMonth() < baseDate.getMonth() || (dateCheck.getMonth() === 11 && baseDate.getMonth === 0));
+      const invalidDate =  invalidDay || invalidMonth;
+
+      if(dateCheck.getHours() > 19 || invalidDate)
           continue;
       res.push(Number(arr[i].o));
       if(dateCheck.getHours() === 19)
