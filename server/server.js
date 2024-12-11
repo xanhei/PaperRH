@@ -185,7 +185,7 @@ app.get("/open", async (req, res) => {
 app.get("/prevOpen", async (req, res) => {
   const end = new Date();
   const start = new Date(end.getFullYear(), end.getMonth(), end.getDate() - 7);
-  const response = await chartFunc.findOpen(`${start.getFullYear()}-${start.getMonth() + 1}-${start.getDate()}`, `${end.getFullYear()}-${end.getMonth() + 1}-${end.getDate()}`);
+  const response = await chartFunc.findOpen(start, end);
   res.send({date: response});
 });
 

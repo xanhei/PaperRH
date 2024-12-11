@@ -7,7 +7,7 @@ This webapp functions as a paper-trading site that allows users to view stock da
 ![ws1.JPG](https://github.com/xanhei/PaperRH/blob/main/images/ws1.JPG?raw=true)
 
 - **Stock view**
-- ![ws2.JPG](https://github.com/xanhei/PaperRH/blob/main/images/ws2.JPG?raw=true)
+![ws2.JPG](https://github.com/xanhei/PaperRH/blob/main/images/ws2.JPG?raw=true)
 
 - **Subdirectories**
   - Client: React App for providing UI and displaying data

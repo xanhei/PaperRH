@@ -1,9 +1,9 @@
 {
   "name": "client",
   "version": "0.1.0",
+  "proxy": "http://localhost:5000",
   "options": {
-    "allowedHosts": ["localhost", ".localhost"], 
-    "proxy": "http://localhost:5000"
+    "allowedHosts": ["localhost", ".localhost"]
   },
   "private": true,
   "dependencies": {

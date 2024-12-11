@@ -25,7 +25,7 @@ const getData = async (timeframe, goBack, term) => {
   dateURL = checkDate.toISOString();
   dateURL = dateURL.substring(0, 10);
   if(goBack == 0)
-    dateURL = await findOpen(dateURL, `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`);
+    dateURL = await findOpen(checkDate, today);
   if(!dateURL)
     return [undefined, undefined];
   const response = await fetch(url + params + `&symbols=${term}` + `&timeframe=${timeframe}` + `&start=${dateURL}`, fetchOptions)
@@ -34,7 +34,7 @@ const getData = async (timeframe, goBack, term) => {
   //set filter variable for daily/weekly charts
   let baseDate;
   if(goBack == 0)
-    baseDate = new Date(dateURL + "T12:00:00");
+    baseDate = today;
   else if(goBack == 7)
     baseDate = checkDate;
 
@@ -60,7 +60,7 @@ const getData = async (timeframe, goBack, term) => {
 const percentChange = async (term) => {
   const end = new Date();
   const start = new Date(end.getFullYear(), end.getMonth(), end.getDate() - 7);
-  const fetchDate = await findOpen(`${start.getFullYear()}-${start.getMonth() + 1}-${start.getDate()}`, `${end.getFullYear()}-${end.getMonth() + 1}-${end.getDate()}`, true);
+  const fetchDate = await findOpen(start, end, true);
   let params = `?sort=asc&symbols=${term}&timeframe=1Day&start=${fetchDate}&end=${fetchDate}`;
   const response = await fetch(`https://data.alpaca.markets/v2/stocks/bars${params}`, fetchOptions);
   const res = await response.json();
@@ -72,7 +72,9 @@ const percentChange = async (term) => {
 //function to find the most recent market open if current day is market holiday (for 1D)
 const findOpen = async (startDate, endDate, percent = false) => {
   const url = "https://paper-api.alpaca.markets/v2/calendar";
-  const response = await fetch(`${url}?start=${startDate}&end=${endDate}`, fetchOptions);
+  const startString = `${startDate.getFullYear()}-${startDate.getMonth() + 1}-${startDate.getDate()}`;
+  const endString = `${endDate.getFullYear()}-${endDate.getMonth() + 1}-${endDate.getDate()}`
+  const response = await fetch(`${url}?start=${startString}&end=${endString}`, fetchOptions);
   const res = await response.json();
   const today = new Date();
   if(!res || !res[res.length - 1])
@@ -130,7 +132,7 @@ const ltdTimeFormat = (arr, baseDate, isMinBar) => {
     const hours = (Number(arr[arr.length - 1].t.substring(11, 13)) + nextHour) % 24;
     let tempString = `${(hours < 10) ? "0" + hours : hours}:${(minutes < 10) ? "0" + minutes : minutes}`
     let formatString = arr[arr.length - 1].t.substring(0, 11) + tempString + ":00Z";
-    if(formatString.substring(11, 16) !== "00:05")
+    if(formatString.substring(14, 16) !== "05") //do not display close of 8:05 PM
       res.push(formatTime(formatString));
   }
   else {
@@ -250,7 +252,7 @@ const getPortData = async (timeframe, goBack, account) => {
   if(chartType === "day") {
     //get db data and compare times with most recent times
     const start = new Date(end.getFullYear(), end.getMonth(), end.getDate() - 7);
-    const checkDate = await findOpen(`${start.getFullYear()}-${start.getMonth() + 1}-${start.getDate()}`, `${end.getFullYear()}-${end.getMonth() + 1}-${end.getDate()}`);
+    const checkDate = await findOpen(start, end);
     if(!checkDate)
       return [undefined, undefined];
     //if last time data was updated was >1Day, clear current db data, else concat data where necessary
