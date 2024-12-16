@@ -22,21 +22,22 @@ const getData = async (timeframe, goBack, term) => {
     (goBack != 7) ? Number(today.getMonth()) - goBack : Number(today.getMonth()),
     (goBack == 7 || goBack == 0) ? Number(today.getDate()) - 7 : Number(today.getDate()),
   );
-  dateURL = checkDate.toISOString();
-  dateURL = dateURL.substring(0, 10);
-  if(goBack == 0)
+
+  let baseDate;
+  let dateURL;
+  if(goBack == 0) {
     dateURL = await findOpen(checkDate, today);
+    baseDate = new Date(dateURL + "T12:00:00.000Z"); //time offset to ensure correct date from baseDate.getDate()
+  }
+  else {
+    dateURL = checkDate.toISOString();
+    dateURL = dateURL.substring(0, 10);
+    baseDate = checkDate;
+  }
   if(!dateURL)
     return [undefined, undefined];
   const response = await fetch(url + params + `&symbols=${term}` + `&timeframe=${timeframe}` + `&start=${dateURL}`, fetchOptions)
   const res = await response.json();
-
-  //set filter variable for daily/weekly charts
-  let baseDate;
-  if(goBack == 0)
-    baseDate = today;
-  else if(goBack == 7)
-    baseDate = checkDate;
 
   //set chart data if response is ok
   if(res.bars && res.bars[term]) {
